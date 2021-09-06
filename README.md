@@ -1,30 +1,18 @@
 
-Respo workflow in Calcit-js
+青朱
 ----
 
-> Respo web page based on [calcit-js](https://github.com/calcit-lang/calcit_runner.rs).
+> Canvas shape drawing with some Chinese
 
-Demo http://repo.calcit-lang.org/respo-calcit-workflow/ .
+Demo http://r.tiye.me/Memkits/cyan-red/ .
 
 ### Usages
 
-To develop:
+_TODO_
 
-```bash
-calcit_runner --emit-js # watching
+### Name Original
 
-yarn # to install vite
-yarn vite # watching and running on localhost:3000
-```
-
-calcit-js is using [Calcit Editor](https://github.com/calcit-lang/editor).
-
-To build:
-
-```bash
-yarn vite build
-http-server dist/
-```
+"青朱" from "青朱出入图".
 
 ### Workflow
 
