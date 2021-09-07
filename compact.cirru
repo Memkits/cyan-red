@@ -7,11 +7,13 @@
     |app.comp.container $ {}
       :ns $ quote
         ns app.comp.container $ :require (respo-ui.core :as ui)
-          respo.core :refer $ defcomp defeffect <> >> div button textarea span input
+          respo-ui.core :refer $ hsl
+          respo.core :refer $ defcomp defeffect <> >> div button textarea span input create-element
           respo.comp.space :refer $ =<
           reel.comp.reel :refer $ comp-reel
           respo-md.comp.md :refer $ comp-md
           app.config :refer $ dev?
+          "\"@mvc-works/codearea" :refer $ codearea
       :defs $ {}
         |comp-container $ quote
           defcomp comp-container (reel)
@@ -22,23 +24,63 @@
                 state $ or (:data states)
                   {} $ :content "\""
               div
-                {} $ :style (merge ui/global ui/row)
+                {} $ :style (merge ui/global ui/fullscreen ui/row)
+                div
+                  {} $ :style (merge ui/expand ui/column)
+                  div ({}) (<> "\"TODO")
+                  comp-codearea $ >> states :code
+                ; div
+                  {} $ :style ui/expand
+                  <> "\"TODO"
+                comp-draw $ :ops store
+                when dev? $ comp-reel (>> states :reel) reel ({})
+        |comp-draw $ quote
+          defcomp comp-draw (ops)
+            [] (draw-effect ops)
+              create-element :canvas $ {} (:style ui/expand)
+        |comp-codearea $ quote
+          defcomp comp-codearea (states)
+            let
+                cursor $ :cursor states
+                state $ or (:data states)
+                  {} $ :content "\""
+              [] (effect-code)
                 textarea $ {}
                   :value $ :content state
                   :placeholder "\"Content"
                   :style $ merge ui/expand ui/textarea
-                    {} $ :height 320
+                    {} $ :font-family ui/font-code
                   :on-input $ fn (e d!)
                     d! cursor $ assoc state :content (:value e)
-                =< 8 nil
-                div
-                  {} $ :style ui/expand
-                  comp-md "|This is some content with `code`"
-                  =< |8px nil
-                  button $ {} (:style ui/button) (:inner-text "\"Run")
-                    :on-click $ fn (e d!)
-                      println $ :content state
-                when dev? $ comp-reel (>> states :reel) reel ({})
+                  :on-keydown $ fn (e d!)
+                    let
+                        event $ :event e
+                      if
+                        and (.-metaKey event)
+                          = 13 $ .-keyCode event
+                        do (.!preventDefault event)
+                          d! :ops $ parse-cirru (:content state)
+        |effect-code $ quote
+          defeffect effect-code () (action el at?)
+            ; when (= action :mount) (codearea el)
+        |draw-effect $ quote
+          defeffect draw-effect (ops) (action el at?)
+            when
+              or (= action :mount) (= action :update)
+              js/console.log ops
+              let
+                  ctx $ .!getContext el "\"2d"
+                  w $ .-offsetWidth el
+                  h $ .-offsetHeight el
+                set! (.-width el) w
+                set! (.-height el) h
+                .!clearRect ctx 0 0 w h
+                set! (.-fillStyle ctx) (hsl 200 80 80)
+                set! (.-strokeStyle ctx) "\"red"
+                .!moveTo ctx 10 10
+                .!rect ctx 40 40 80 80
+                .!stroke ctx
+                .!fill ctx
     |app.schema $ {}
       :ns $ quote (ns app.schema)
       :defs $ {}
@@ -46,6 +88,7 @@
           def store $ {}
             :states $ {}
               :cursor $ []
+            :ops $ []
     |app.updater $ {}
       :ns $ quote
         ns app.updater $ :require
@@ -56,6 +99,7 @@
             case-default op
               do (println "\"unknown op:" op) store
               :states $ update-states store data
+              :ops $ assoc store :ops data
               :hydrate-storage data
     |app.main $ {}
       :ns $ quote
@@ -82,6 +126,7 @@
           defatom *reel $ -> reel-schema/reel (assoc :base schema/store) (assoc :store schema/store)
         |main! $ quote
           defn main! ()
+            if config/dev? $ load-console-formatter!
             println "\"Running mode:" $ if config/dev? "\"dev" "\"release"
             render-app!
             add-watch *reel :changes $ fn (reel prev) (render-app!)
