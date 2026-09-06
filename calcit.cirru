@@ -12,36 +12,41 @@
           :code $ quote
             defcomp comp-codearea (states)
               let
-                  cursor $ :cursor states
-                  state $ or (:data states)
-                    {} $ :content |
+                  states-map $ unsafe-coerce states 'Map
+                  cursor $ &map:get states-map :cursor
+                  state $ unsafe-coerce
+                    option:unwrap-or (get states-map :data)
+                      {} $ :content |
+                    :: 'Map
+                  content $ unsafe-coerce (&map:get state :content) 'String
                 [] (effect-code)
-                  textarea $ {}
-                    :value $ :content state
-                    :placeholder |Content
+                  textarea $ {} (:value content) (:placeholder |Content)
                     :style $ merge ui/expand ui/textarea
                       {} $ :font-family ui/font-code
                     :on-input $ fn (e d!)
-                      d! cursor $ assoc state :content (:value e)
+                      d! cursor $ assoc state :content
+                        &map:get (unsafe-coerce e 'Map) :value
                     :on-keydown $ fn (e d!)
                       let
-                          event $ :event e
+                          event $ unsafe-coerce
+                            &map:get (unsafe-coerce e 'Map) :event
+                            :: 'JsObject
+                          meta? $ unsafe-coerce (.-metaKey event) 'Bool
+                          key-code $ unsafe-coerce (.-keyCode event) 'Number
                         if
-                          and (.-metaKey event)
-                            = 13 $ .-keyCode event
+                          and meta? $ = 13 key-code
                           do (.!preventDefault event)
-                            d! :ops $ parse-cirru (:content state)
+                            d! :ops $ parse-cirru content
           :examples $ []
           :schema $ :: 'Dynamic
         'comp-container $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defcomp comp-container (reel)
               let
-                  store $ :store reel
-                  states $ :states store
-                  cursor $ or (:cursor states) ([])
-                  state $ or (:data states)
-                    {} $ :content |
+                  reel-map $ unsafe-coerce reel 'Map
+                  store $ unsafe-coerce (&map:get reel-map :store) 'Map
+                  states $ unsafe-coerce (&map:get store :states) 'Map
+                  ops $ unsafe-coerce (&map:get store :ops) (:: 'List 'Dynamic)
                 div
                   {} $ :style (merge ui/global ui/fullscreen ui/row)
                   div
@@ -51,7 +56,7 @@
                   ; div
                     {} $ :style ui/expand
                     <> |TODO
-                  comp-draw $ :ops store
+                  comp-draw ops
                   when dev? $ comp-reel (>> states :reel) reel ({})
           :examples $ []
           :schema $ :: 'Dynamic
@@ -69,11 +74,12 @@
                 or (= action :mount) (= action :update)
                 ; js/console.log ops
                 let
-                    ctx $ .!getContext el |2d
-                    w $ .-offsetWidth el
-                    h $ .-offsetHeight el
-                  set! (.-width el) w
-                  set! (.-height el) h
+                    element $ unsafe-coerce el 'JsObject
+                    ctx $ unsafe-coerce (.!getContext element |2d) 'JsObject
+                    w $ unsafe-coerce (.-offsetWidth element) 'Number
+                    h $ unsafe-coerce (.-offsetHeight element) 'Number
+                  set! (.-width element) w
+                  set! (.-height element) h
                   .!clearRect ctx 0 0 w h
                   set! (.-fillStyle ctx) (hsl 200 80 80)
                   set! (.-strokeStyle ctx) |red
@@ -103,7 +109,8 @@
       :defs $ {}
         'dev? $ %{} 'CodeEntry (:doc |)
           :code $ quote
-            def dev? $ = |dev (get-env |mode |release)
+            def dev? $ = |dev
+              option:unwrap-or (get-env |mode) |release
           :examples $ []
           :schema $ :: 'Dynamic
         'site $ %{} 'CodeEntry (:doc |)
@@ -126,7 +133,7 @@
               when
                 and config/dev? $ not= op :states
                 println |Dispatch: op
-              reset! *reel $ reel-updater updater @*reel op op-data
+              reset! *reel $ reel-updater updater @*reel (:: op op-data)
           :examples $ []
           :schema $ :: 'Dynamic
         'main! $ %{} 'CodeEntry (:doc |)
@@ -137,24 +144,24 @@
               render-app!
               add-watch *reel :changes $ fn (reel prev) (render-app!)
               listen-devtools! |k dispatch!
-              .!addEventListener js/window |beforeunload $ fn (event) (persist-storage!)
+              .!addEventListener (unsafe-coerce js/window 'JsObject) |beforeunload $ fn (event) (persist-storage!)
               repeat! 60 persist-storage!
               let
-                  raw $ .!getItem js/localStorage (:storage-key config/site)
-                when (some? raw)
-                  dispatch! :hydrate-storage $ parse-cirru-edn raw
+                  raw $ .!getItem (unsafe-coerce js/localStorage 'JsObject) (:storage-key config/site)
+                when (js-present? raw)
+                  dispatch! :hydrate-storage $ parse-cirru-edn (unsafe-coerce raw 'String)
               println "|App started."
           :examples $ []
           :schema $ :: 'Dynamic
         'mount-target $ %{} 'CodeEntry (:doc |)
           :code $ quote
-            def mount-target $ .!querySelector js/document |.app
+            def mount-target $ .!querySelector (unsafe-coerce js/document 'JsObject) |.app
           :examples $ []
           :schema $ :: 'Dynamic
         'persist-storage! $ %{} 'CodeEntry (:doc |)
           :code $ quote
-            defn persist-storage! () $ .!setItem js/localStorage (:storage-key config/site)
-              format-cirru-edn $ :store @*reel
+            defn persist-storage! () $ .!setItem (unsafe-coerce js/localStorage 'JsObject) (:storage-key config/site)
+              format-cirru-edn $ &map:get (unsafe-coerce @*reel 'Map) :store
           :examples $ []
           :schema $ :: 'Dynamic
         'reload! $ %{} 'CodeEntry (:doc |)
@@ -210,12 +217,12 @@
       :defs $ {}
         'updater $ %{} 'CodeEntry (:doc |)
           :code $ quote
-            defn updater (store op data op-id op-time)
-              case-default op
-                do (println "|unknown op:" op) store
-                :states $ update-states store data
-                :ops $ assoc store :ops data
-                :hydrate-storage data
+            defn updater (store op op-id op-time)
+              match op
+                (:states cursor data) (update-states store cursor data)
+                (:ops data) (assoc store :ops data)
+                (:hydrate-storage data) data
+                _ $ do (println "|unknown op:" op) store
           :examples $ []
           :schema $ :: 'Dynamic
       :ns $ %{} 'NsEntry (:doc |)
