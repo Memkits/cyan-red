@@ -3,94 +3,139 @@
   :about "|Machine-generated snapshot. Do not edit directly — changes will be overwritten. Use `calcit query` to inspect and `calcit edit`/`calcit tree` to modify. Run `calcit docs agents --contract` before mutations; use `--full` for first orientation or changed contract digest. Manual edits must follow format and schema conventions, then run `calcit edit format`."
   :package |app
   :entries $ {} $ :default
-    {} (:description |) (:init-fn 'app.main/main!) (:mode :native)
-      :reload-fn 'app.main/reload!
+    {} (:description |) (:init-fn 'app.main/main!) (:mode :native) (:reload-fn 'app.main/reload!)
       :feature-policy $ {}
       :modules $ [] |respo.calcit/ |lilac/ |memof/ |respo-ui.calcit/ |respo-markdown.calcit/ |reel.calcit/
       :type-slots $ {}
   :files $ {}
     'app.comp.container $ %{} 'FileEntry
       :defs $ {}
+        'CanvasContextHost $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ deftrait CanvasContextHost (:fill-style 'String) (:stroke-style 'String)
+            .clear-rect! $ :: 'Fn $ {}
+              :args $ [] 'app.comp.container/CanvasContextHost 'Number 'Number 'Number 'Number
+              :return 'Unit
+            .move-to! $ :: 'Fn $ {}
+              :args $ [] 'app.comp.container/CanvasContextHost 'Number 'Number
+              :return 'Unit
+            .rect! $ :: 'Fn $ {}
+              :args $ [] 'app.comp.container/CanvasContextHost 'Number 'Number 'Number 'Number
+              :return 'Unit
+            .stroke! $ :: 'Fn $ {}
+              :args $ [] 'app.comp.container/CanvasContextHost
+              :return 'Unit
+            .fill! $ :: 'Fn $ {}
+              :args $ [] 'app.comp.container/CanvasContextHost
+              :return 'Unit
+          :examples $ []
+          :ffi $ {} (:backend :js) (:kind :external-object) (:target :browser)
+            :names $ {} (:clear-rect! |clearRect) (:fill! |fill) (:fill-style |fillStyle) (:move-to! |moveTo) (:rect! |rect) (:stroke! |stroke) (:stroke-style |strokeStyle)
+            :writable $ #{} :fill-style :stroke-style
+          :schema $ :: 'Trait
+        'CanvasElementHost $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ deftrait CanvasElementHost (:offset-width 'Number) (:offset-height 'Number) (:width 'Number) (:height 'Number)
+            .get-context $ :: 'Fn $ {}
+              :args $ [] 'app.comp.container/CanvasElementHost 'String
+              :return 'app.comp.container/CanvasContextHost
+          :examples $ []
+          :ffi $ {} (:backend :js) (:kind :external-object) (:target :browser)
+            :names $ {} (:get-context |getContext) (:height |height) (:offset-height |offsetHeight) (:offset-width |offsetWidth) (:width |width)
+            :writable $ #{} :height :width
+          :schema $ :: 'Trait
         'comp-codearea $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defcomp comp-codearea (states)
             let
-                states-map $ unsafe-coerce states 'Map
+                states-map states
                 cursor $ &map:get states-map :cursor
-                state $ unsafe-coerce
+                state $ assert-type
                   option:unwrap-or (get states-map :data)
                     {} $ :content |
-                  :: 'Map
-                content $ unsafe-coerce (&map:get state :content) 'String
+                  :: 'Map 'Tag 'Dynamic
+                content $ assert-type (&map:get state :content) 'String
               [] (effect-code)
                 textarea $ {} (:value content) (:placeholder |Content)
                   :style $ merge ui/expand ui/textarea $ {} (:font-family ui/font-code)
                   :on-input $ fn (e d!)
-                    d! cursor $ assoc state :content $ &map:get (unsafe-coerce e 'Map) :value
+                    d! $ :: :states cursor $ assoc state :content
+                      event-value $ assert-type e $ :: 'Map 'Tag 'Dynamic
                   :on-keydown $ fn (e d!)
-                    let
-                        event $ unsafe-coerce
-                          &map:get (unsafe-coerce e 'Map) :event
-                          :: 'JsObject
-                        meta? $ unsafe-coerce (.-metaKey event) 'Bool
-                        key-code $ unsafe-coerce (.-keyCode event) 'Number
-                      if
-                        and meta? $ = 13 key-code
-                        do (.!preventDefault event)
-                          d! :ops $ parse-cirru content
+                    when
+                      submit-shortcut? $ assert-type e $ :: 'Map 'Tag 'Dynamic
+                      d! $ :: :ops $ parse-cirru content
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn $ {} (:return 'respo.schema/Component)
+            :args $ [] $ :: 'Map 'Tag 'Dynamic
+            :features $ #{} :js-ffi
         'comp-container $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defcomp comp-container (reel)
             let
-                reel-map $ unsafe-coerce reel 'Map
-                store $ unsafe-coerce (&map:get reel-map :store) 'Map
-                states $ unsafe-coerce (&map:get store :states) 'Map
-                ops $ unsafe-coerce (&map:get store :ops) (:: 'List 'Dynamic)
+                store $ assert-type (&map:get reel :store) 'app.schema/Store
+                states store.:states
+                ops store.:ops
               div
                 {} $ :style $ merge ui/global ui/fullscreen ui/row
                 div
                   {} $ :style $ merge ui/expand ui/column
                   div ({}) (<> |TODO)
-                  comp-codearea $ >> states :code
-                ; div
-                  {} $ :style ui/expand
-                  <> |TODO
+                  comp-codearea $ assert-type (>> states :code) (:: 'Map 'Tag 'Dynamic)
                 comp-draw ops
                 when dev? $ comp-reel (>> states :reel) reel $ {}
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn $ {} (:return 'respo.schema/Component)
+            :args $ [] 'app.schema/Reel
+            :features $ #{} :js-ffi
         'comp-draw $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defcomp comp-draw (ops)
             [] (draw-effect ops)
               create-element :canvas $ {} $ :style ui/expand
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn $ {} (:return 'respo.schema/Component)
+            :args $ [] $ :: 'List 'Dynamic
         'draw-effect $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defeffect draw-effect (ops) (action el at?)
             when
               or (= action :mount) (= action :update)
-              ; js/console.log ops
               let
-                  element $ unsafe-coerce el 'JsObject
-                  ctx $ unsafe-coerce (.!getContext element |2d) 'JsObject
-                  w $ unsafe-coerce (.-offsetWidth element) 'Number
-                  h $ unsafe-coerce (.-offsetHeight element) 'Number
-                set! (.-width element) w
-                set! (.-height element) h
-                .!clearRect ctx 0 0 w h
-                set! (.-fillStyle ctx) (hsl 200 80 80)
-                set! (.-strokeStyle ctx) |red
-                .!moveTo ctx 10 10
-                .!rect ctx 40 40 80 80
-                .!stroke ctx
-                .!fill ctx
+                  element $ unsafe-coerce el CanvasElementHost
+                  ctx $ .get-context element |2d
+                  w $ element :offset-width
+                  h $ element :offset-height
+                do (js-set element :width w) (js-set element :height h) (.clear-rect! ctx 0 0 w h)
+                  js-set ctx :fill-style $ hsl 200 80 80
+                  js-set ctx :stroke-style |red
+                  .move-to! ctx 10 10
+                  .rect! ctx 40 40 80 80
+                  .stroke! ctx
+                  .fill! ctx
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn $ {} (:return 'Dynamic)
+            :args $ [] $ :: 'List 'Dynamic
+            :features $ #{} :js-ffi
         'effect-code $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defeffect effect-code () (action el at?)
             ; when (= action :mount) (codearea el)
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn $ {} (:return 'Dynamic)
+            :args $ []
+        'event-value $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ defn event-value (event)
+            assert-type (&map:get event :value) 'String
+          :examples $ []
+          :schema $ :: 'Fn $ {} (:return 'String)
+            :args $ [] $ :: 'Map 'Tag 'Dynamic
+        'submit-shortcut? $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ defn submit-shortcut? (event)
+            let
+                keyboard $ unsafe-coerce (&map:get event :event) js-ffi.browser/KeyboardEventHost
+              if
+                and (keyboard :meta-key?)
+                  = |Enter $ keyboard :key
+                do (.prevent-default! keyboard) true
+                , false
+          :examples $ []
+          :schema $ :: 'Fn $ {} (:return 'Bool)
+            :args $ [] $ :: 'Map 'Tag 'Dynamic
+            :features $ #{} :js-ffi
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.comp.container
           :require (respo-ui.core :as ui)
@@ -107,12 +152,12 @@
           :code $ quote $ def dev?
             = |dev $ option:unwrap-or (get-env |mode) |release
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Bool
         'site $ %{} 'CodeEntry (:doc |)
           :code $ quote $ def site
             {} $ :storage-key |workflow
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Map 'Tag 'String
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.config
     'app.main $ %{} 'FileEntry
@@ -121,15 +166,15 @@
           :code $ quote $ defatom *reel
             -> reel-schema/reel (assoc :base schema/store) (assoc :store schema/store)
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Ref 'app.schema/Reel
         'dispatch! $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ defn dispatch! (op op-data)
-            when
-              and config/dev? $ not= op :states
-              println |Dispatch: op
-            reset! *reel $ reel-updater updater @*reel $ :: op op-data
+          :code $ quote $ defn dispatch! (op)
+            do
+              when config/dev? $ println |Dispatch: op
+              reset! *reel $ assert-type (reel-updater updater @*reel op) 'app.schema/Reel
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn $ {} (:return 'Unit)
+            :args $ [] 'Enum
         'main! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn main! ()
             if config/dev? $ load-console-formatter!
@@ -137,49 +182,60 @@
             render-app!
             add-watch *reel :changes $ fn (reel prev) (render-app!)
             listen-devtools! |k dispatch!
-            .!addEventListener (unsafe-coerce js/window 'JsObject) |beforeunload $ fn (event) (persist-storage!)
+            add-event-listener! |beforeunload $ fn (_) (persist-storage!)
             repeat! 60 persist-storage!
-            let
-                raw $ .!getItem (unsafe-coerce js/localStorage 'JsObject) (:storage-key config/site)
-              when (js-present? raw)
-                dispatch! :hydrate-storage $ parse-cirru-edn $ unsafe-coerce raw 'String
+            match
+              storage-get $ config/site :storage-key
+              (:some raw)
+                do
+                  dispatch! $ :: :hydrate-storage $ parse-cirru-edn raw
+                  , &unit
+              (:none) &unit
             println "|App started."
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn $ {} (:return 'Unit)
+            :args $ []
+            :features $ #{} :js-ffi
         'mount-target $ %{} 'CodeEntry (:doc |)
           :code $ quote $ def mount-target
-            .!querySelector (unsafe-coerce js/document 'JsObject) |.app
+            option:unwrap $ query-selector |.app
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'js-ffi.browser/DomElementHost
         'persist-storage! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn persist-storage! ()
-            .!setItem (unsafe-coerce js/localStorage 'JsObject) (:storage-key config/site)
-              format-cirru-edn $ &map:get (unsafe-coerce @*reel 'Map) :store
+            storage-set! (config/site :storage-key)
+              format-cirru-edn $ &map:get @*reel :store
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn $ {} (:return 'Unit)
+            :args $ []
         'reload! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn reload! ()
             if (nil? build-errors)
               do (remove-watch *reel :changes) (clear-cache!)
                 add-watch *reel :changes $ fn (reel prev) (render-app!)
-                reset! *reel $ refresh-reel @*reel schema/store updater
+                reset! *reel $ assert-type (refresh-reel @*reel schema/store updater) 'app.schema/Reel
                 hud! |ok~ |Ok
               hud! |error build-errors
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn $ {} (:return 'Unit)
+            :args $ []
         'render-app! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn render-app! ()
             render! mount-target (comp-container @*reel) dispatch!
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn $ {} (:return 'Unit)
+            :args $ []
         'repeat! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn repeat! (duration cb)
-            js/setTimeout
-              fn () (cb)
-                repeat! (* 1000 duration) cb
-              * 1000 duration
+            do
+              set-interval! cb $ * 1000 duration
+              , &unit
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn $ {} (:return 'Unit)
+            :args $ [] 'Number $ :: 'Fn
+              {} (:return 'Unit)
+                :args $ []
+            :features $ #{} :js-ffi
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.main
           :require
@@ -193,15 +249,26 @@
             app.config :as config
             |./calcit.build-errors :default build-errors
             |bottom-tip :default hud!
+            js-ffi.browser :refer $ query-selector add-event-listener! set-interval! storage-get storage-set!
     'app.schema $ %{} 'FileEntry
-      :defs $ {} $ 'store
-        %{} 'CodeEntry (:doc |)
+      :defs $ {}
+        'Reel $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ def Reel &unit
+          :examples $ []
+          :schema $ :: 'Map 'Tag 'Dynamic
+        'Store $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ defstruct Store
+            :states $ :: 'Map 'Tag 'Dynamic
+            :ops $ :: 'List 'Dynamic
+          :examples $ []
+          :schema $ :: 'StructDef
+        'store $ %{} 'CodeEntry (:doc |)
           :code $ quote $ def store
-            {}
+            %{} Store
               :states $ {} $ :cursor ([])
               :ops $ []
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'app.schema/Store
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.schema
     'app.updater $ %{} 'FileEntry
@@ -214,7 +281,8 @@
               (:hydrate-storage data) data
               _ $ do (println "|unknown op:" op) store
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn $ {} (:return 'app.schema/Store)
+            :args $ [] 'app.schema/Store 'Enum 'String 'Number
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.updater
           :require $ respo.cursor :refer $ update-states
