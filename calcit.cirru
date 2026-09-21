@@ -5,7 +5,7 @@
   :entries $ {} $ :default
     {} (:description |) (:init-fn 'app.main/main!) (:mode :native) (:reload-fn 'app.main/reload!)
       :feature-policy $ {}
-      :modules $ [] |respo.calcit/ |lilac/ |memof/ |respo-ui.calcit/ |respo-markdown.calcit/ |reel.calcit/
+      :modules $ [] |respo.calcit/ |respo-ui.calcit/ |respo-markdown.calcit/ |reel.calcit/
       :type-slots $ {}
   :files $ {}
     'app.comp.container $ %{} 'FileEntry
@@ -100,13 +100,15 @@
                   ctx $ .get-context element |2d
                   w $ element :offset-width
                   h $ element :offset-height
-                do (js-set element :width w) (js-set element :height h) (.clear-rect! ctx 0 0 w h)
-                  js-set ctx :fill-style $ hsl 200 80 80
-                  js-set ctx :stroke-style |red
-                  .move-to! ctx 10 10
-                  .rect! ctx 40 40 80 80
-                  .stroke! ctx
-                  .fill! ctx
+                js-set element :width w
+                js-set element :height h
+                .clear-rect! ctx 0 0 w h
+                js-set ctx :fill-style $ hsl 200 80 80
+                js-set ctx :stroke-style |red
+                .move-to! ctx 10 10
+                .rect! ctx 40 40 80 80
+                .stroke! ctx
+                .fill! ctx
           :examples $ []
           :schema $ :: 'Fn $ {} (:return 'Dynamic)
             :args $ [] $ :: 'List 'Dynamic
@@ -169,9 +171,8 @@
           :schema $ :: 'Ref 'app.schema/Reel
         'dispatch! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn dispatch! (op)
-            do
-              when config/dev? $ println |Dispatch: op
-              reset! *reel $ assert-type (reel-updater updater @*reel op) 'app.schema/Reel
+            when config/dev? $ println |Dispatch: op
+            reset! *reel $ assert-type (reel-updater updater @*reel op) 'app.schema/Reel
           :examples $ []
           :schema $ :: 'Fn $ {} (:return 'Unit)
             :args $ [] 'Enum
@@ -227,9 +228,8 @@
             :args $ []
         'repeat! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn repeat! (duration cb)
-            do
-              set-interval! cb $ * 1000 duration
-              , &unit
+            set-interval! cb $ * 1000 duration
+            , &unit
           :examples $ []
           :schema $ :: 'Fn $ {} (:return 'Unit)
             :args $ [] 'Number $ :: 'Fn
@@ -264,9 +264,9 @@
           :schema $ :: 'StructDef
         'store $ %{} 'CodeEntry (:doc |)
           :code $ quote $ def store
-            %{} Store
-              :states $ {} $ :cursor ([])
-              :ops $ []
+            Store :states
+              {} $ :cursor $ []
+              , :ops $ []
           :examples $ []
           :schema $ :: 'app.schema/Store
       :ns $ %{} 'NsEntry (:doc |)
