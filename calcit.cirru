@@ -5,7 +5,7 @@
   :entries $ {} $ :default
     {} (:description |) (:init-fn 'app.main/main!) (:mode :js) (:reload-fn 'app.main/reload!) (:target :browser)
       :feature-policy $ {}
-      :modules $ [] |respo.calcit/ |respo-ui.calcit/ |respo-markdown.calcit/ |reel.calcit/
+      :modules $ [] |respo.calcit/ |respo-ui.calcit/ |reel.calcit/
       :type-slots $ {}
   :files $ {}
     'app.comp.container $ %{} 'FileEntry
@@ -145,7 +145,6 @@
             respo.core :refer $ defcomp defeffect <> >> div button textarea span input create-element
             respo.comp.space :refer $ =<
             reel.comp.reel :refer $ comp-reel
-            respo-md.comp.md :refer $ comp-md
             app.config :refer $ dev?
             |@mvc-works/codearea :refer $ codearea
     'app.config $ %{} 'FileEntry
