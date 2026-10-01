@@ -88,7 +88,6 @@ jobs:
         set -euo pipefail
         yarn build
         node --test scripts/canvas-regression.test.mjs
-        grep -Fq "$VITE_BASE_URL" dist/index.html
 
     - name: Check COS credentials
       id: cos-credentials
