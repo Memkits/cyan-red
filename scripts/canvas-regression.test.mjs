@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as c from '../js-out/calcit.core.mjs';
 import { draw_effect, comp_codearea, submit_shortcut_$q_ } from '../js-out/app.comp.container.mjs';
-import { store } from '../js-out/app.schema.mjs';
+import { store, read_store, read_stored_store } from '../js-out/app.schema.mjs';
 import { updater } from '../js-out/app.updater.mjs';
 import { component_$q_, component_tree } from '../js-out/respo.util.detect.mjs';
 
@@ -79,6 +79,19 @@ test('Meta+Enter dispatches one parsed ops Enum accepted by updater', () => {
     next = updater(store, args[0], 'submit', 1);
   });
   assert.equal(count, 1);
-  assert.ok(c._$e_(field(next, t.ops), c.parse_cirru('rect 1 2')));
-  assert.deepEqual(field(next, t.ops).value, [['rect', '1', '2']]);
+  assert.ok(c._$e_(field(next, t.ops), c._$L_(c._$L_('rect', '1', '2'))));
+});
+test('old empty and CirruQuote saves restore without changing state or dropping ops', () => {
+  assert.equal(read_store(store), store);
+  // Captured from the original 0.27.0 writer, not fabricated JS host objects.
+  const saved = [
+    ["%{} 'Store\n  :ops $ []\n  :states $ {} $ :cursor ([])\n", c._$L_()],
+    ["%{} 'Store\n  :ops $ quote $\n    rect 1 2\n  :states $ {} $ :cursor ([])\n", c._$L_(c._$L_('rect', '1', '2'))],
+  ];
+  for (const [raw, expected] of saved) {
+    const restored = read_stored_store(raw);
+    assert.ok(c._$e_(field(restored, t.ops), expected));
+    assert.ok(c._$e_(field(restored, t.states), field(store, t.states)));
+    assert.ok(c._$e_(read_stored_store(c.format_cirru_edn(restored)), restored));
+  }
 });
