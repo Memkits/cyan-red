@@ -10,9 +10,9 @@ Demo http://r.tiye.me/Memkits/cyan-red/ .
 
 _TODO_
 
-使用配对的 Calcit/procs **0.30.1-alpha.4**（预发布，不是正式 0.30.1）、
-Caps 0.1.1、Node.js 24 和 Yarn 4.18.0。模块使用正式 Reel 0.6.39、
-Respo 0.16.122、UI 0.7.41、js-ffi 0.2.3。
+使用配对的正式 Calcit/procs **0.30.1**、
+Caps 0.1.1、Node.js 24 和 Yarn 4.18.0。模块使用精确正式 Reel 0.6.41、
+Respo 0.16.124、UI 0.8.0、js-ffi 0.2.5；升级后需重新安装模块。
 
 提交代码后，`:ops` 统一保存为 Cirru 行列表，允许行内嵌套语法树；原 localStorage key、
 Store 的 `:states` / `:ops` 字段不变。读取原 0.27.0 存档时兼容空 List 和 CirruQuote，
@@ -30,7 +30,7 @@ node --test scripts/canvas-regression.test.mjs
 `yarn build` compiles the default JS browser entry and builds once. `yarn dev`
 compiles initially and starts Vite; for live edits, run `calcit calcit.cirru -w`
 in another terminal. CI 使用 canonical、全部定义、完整 strict 与实际构建，保留原有
-7 条 Canvas/输入回归，并在同一测试文件增加 1 条旧存档兼容/往返回归；不新增检查脚本。
+8 条 Canvas/输入/旧存档兼容与往返回归；本轮不新增检查脚本、测试框架或类型预算。
 
 移除伪 Reel 类型别名，按实际 Map 合同接入 Reel；外部 updater/事件值在边界检查。
 DOM 挂载复用 Respo 已发布的 typed selector，未新增宿主强转；保留原两处 Canvas/KeyboardEvent
