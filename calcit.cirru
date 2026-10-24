@@ -46,17 +46,17 @@
           :code $ quote $ defcomp comp-codearea (states)
             let
                 states-map states
-                cursor $ option:unwrap $ get states-map :cursor
+                cursor $ .unwrap $ get states-map :cursor
                 state $ decode-map-as
-                  option:unwrap-or (get states-map :data)
+                  .unwrap-or (get states-map :data)
                     {} $ :content |
                   :: 'Map 'Tag 'Dynamic
                 content $ decode-map-as
-                  option:unwrap $ get state :content
+                  .unwrap $ get state :content
                   , 'String
               [] (effect-code)
                 textarea $ {} (:value content) (:placeholder |Content)
-                  :style $ merge ui/expand ui/textarea $ {} (:font-family ui/font-code)
+                  :style $ .merge ui/expand ui/textarea $ {} (:font-family ui/font-code)
                   :on-input $ fn (e d!)
                     hint-fn $ {}
                       :args $ [] (:: 'Map 'Tag 'Dynamic)
@@ -88,13 +88,13 @@
         'comp-container $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defcomp comp-container (reel)
             let
-                store $ app.schema/read-store $ option:unwrap (get reel :store)
+                store $ app.schema/read-store $ .unwrap (get reel :store)
                 states store.:states
                 ops store.:ops
               div
-                {} $ :style $ merge ui/global ui/fullscreen ui/row
+                {} $ :style $ .merge ui/global ui/fullscreen ui/row
                 div
-                  {} $ :style $ merge ui/expand ui/column
+                  {} $ :style $ .merge ui/expand ui/column
                   div ({}) (<> |TODO)
                   comp-codearea $ decode-map-as (>> states :code) (:: 'Map 'Tag 'Dynamic)
                 comp-draw ops
@@ -142,7 +142,7 @@
         'event-value $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn event-value (event)
             decode-map-as
-              option:unwrap $ get event :value
+              .unwrap $ get event :value
               , 'String
           :examples $ []
           :schema $ :: 'Fn $ {} (:return 'String)
@@ -151,7 +151,7 @@
           :code $ quote $ defn submit-shortcut? (event)
             let
                 keyboard $ unsafe-coerce
-                  option:unwrap $ get event :event
+                  .unwrap $ get event :event
                   , js-ffi.browser/KeyboardEventHost
               if
                 and (keyboard :meta-key?)
@@ -175,7 +175,7 @@
       :defs $ {}
         'dev? $ %{} 'CodeEntry (:doc |)
           :code $ quote $ def dev?
-            = |dev $ option:unwrap-or (get-env |mode) |release
+            = |dev $ .unwrap-or (get-env |mode) |release
           :examples $ []
           :schema $ :: 'Bool
         'site $ %{} 'CodeEntry (:doc |)
@@ -216,7 +216,7 @@
             add-event-listener! |beforeunload $ fn (_) (persist-storage!)
             repeat! 60 persist-storage!
             match
-              storage-get $ option:unwrap $ get config/site :storage-key
+              storage-get $ .unwrap $ get config/site :storage-key
               (:some raw)
                 do
                   dispatch! $ :: :hydrate-storage $ app.schema/read-stored-store raw
@@ -229,14 +229,14 @@
             :features $ #{} :js-ffi
         'mount-target $ %{} 'CodeEntry (:doc |)
           :code $ quote $ def mount-target
-            option:unwrap $ respo.ffi.browser/query-selector |.app
+            .unwrap $ respo.ffi.browser/query-selector |.app
           :examples $ []
           :schema $ :: 'respo.dom/DomElement
         'persist-storage! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn persist-storage! ()
             storage-set!
-              option:unwrap $ get config/site :storage-key
-              format-cirru-edn $ option:unwrap $ get @*reel :store
+              .unwrap $ get config/site :storage-key
+              format-cirru-edn $ .unwrap $ get @*reel :store
           :examples $ []
           :schema $ :: 'Fn $ {} (:return 'Unit)
             :args $ []
@@ -309,10 +309,10 @@
                     fields $ .to-map current
                     normalized $ Store :states
                       decode-map-as
-                        option:unwrap $ get fields :states
+                        .unwrap $ get fields :states
                         :: 'Map 'Tag 'Dynamic
                       , :ops $ read-ops
-                        option:unwrap $ get fields :ops
+                        .unwrap $ get fields :ops
                   if (= current normalized) current normalized
                 _ other $ raise |Expected-Store
               raise |Expected-Store
