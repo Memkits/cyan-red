@@ -11,8 +11,11 @@ Demo http://r.tiye.me/Memkits/cyan-red/ .
 _TODO_
 
 使用配对的正式 Calcit/procs **0.30.1**、
-Caps 0.1.1、Node.js 24 和 Yarn 4.18.0。模块使用精确正式 Reel 0.6.41、
-Respo 0.16.124、UI 0.8.0、js-ffi 0.2.5；升级后需重新安装模块。
+Caps 0.1.1、Node.js 24 和 Yarn 4.18.0。模块使用精确正式 Reel 0.6.42、
+Respo 0.16.126、UI 0.8.1、js-ffi 0.2.6；升级后需重新安装整图并生成 JS。
+
+公开调用同步 `.unwrap`、`.unwrap-or`、`.merge`；只改变调用头，参数、默认值、
+类型声明、原测试、Canvas/键盘宿主边界和两处页面报错 `hud!` 保留。
 
 提交代码后，`:ops` 统一保存为 Cirru 行列表，允许行内嵌套语法树；原 localStorage key、
 Store 的 `:states` / `:ops` 字段不变。读取原 0.27.0 存档时兼容空 List 和 CirruQuote，
