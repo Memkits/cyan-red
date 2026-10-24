@@ -2,7 +2,16 @@ import assert from 'node:assert/strict';
 import {execFileSync} from 'node:child_process';
 import {mkdirSync,readFileSync,writeFileSync} from 'node:fs';
 const run=(...args)=>execFileSync(process.env.CYAN_QUERY_CLI||'calcit',args,{encoding:'utf8',maxBuffer:10e6,stdio:['ignore','pipe','pipe']});
-const q=(...args)=>JSON.parse(run('query',...args,'--format','json')).data;
+function normalizeSets(value){
+  if(Array.isArray(value))return value.map(normalizeSets);
+  if(value&&typeof value==='object'){
+    const result=Object.fromEntries(Object.entries(value).map(([k,v])=>[k,normalizeSets(v)]));
+    if(Object.keys(result).length===1&&Array.isArray(result.__edn_set))result.__edn_set.sort((a,b)=>JSON.stringify(a).localeCompare(JSON.stringify(b)));
+    return result;
+  }
+  return value;
+}
+const q=(...args)=>normalizeSets(JSON.parse(run('query',...args,'--format','json')).data);
 mkdirSync('acceptance',{recursive:true});
 function inventory(){
   const defs=[];
@@ -37,7 +46,7 @@ if(process.argv[2]==='inventory'){
 }
 assert.equal(run('-v').trim(),'0.30.1');run('docs','agents','--contract');
 const before=inventory(),config=q('config'),namespaces=q('ns').namespaces.map(ns=>q('ns',ns));
-assert.deepEqual(before,JSON.parse(readFileSync('acceptance/reviewed.json','utf8')));
+assert.deepEqual(before,normalizeSets(JSON.parse(readFileSync('acceptance/reviewed.json','utf8'))));
 const expected=structuredClone(before),{ops,counts}=select(expected,true);
 assert.deepEqual(counts,{'option:unwrap':11,'option:unwrap-or':2,'merge':3});assert.equal(ops.length,16);
 writeFileSync('acceptance/before.json',JSON.stringify(before,null,2));
