@@ -2,7 +2,7 @@ name: Upload
 
 on:
   push:
-    branches: [main]
+    branches: [main, prepare/cyan-red-public031]
   pull_request: {}
 
 permissions:
@@ -49,11 +49,14 @@ jobs:
         yarn install --immutable
         caps verify --toolchain
 
+    - name: Prepare public methods with official Calcit
+      run: node prepare-source.mjs
+
     - name: Validate Calcit snapshot and types
       run: |
         set -euo pipefail
         calcit calcit.cirru edit format
-        git diff --exit-code -- calcit.cirru
+        test "$(git hash-object calcit.cirru)" = "$(cat acceptance/snapshot-blob.txt)"
         calcit calcit.cirru --check-only --all-defs
         calcit calcit.cirru fix --workflow strict --verify --format json | jq -e '.data.workflow.status == "passed" and .diagnostics == []'
 
@@ -82,9 +85,21 @@ jobs:
         yarn build
         node --test scripts/canvas-regression.test.mjs
 
+    - name: Preserve official source preparation
+      if: always()
+      uses: actions/upload-artifact@v7.0.0
+      with:
+        name: cyan-red-source-prepared
+        path: |
+          calcit.cirru
+          acceptance
+          dist
+        if-no-files-found: error
+        retention-days: 3
+
     - name: Check COS credentials
       id: cos-credentials
-      if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
+      if: (github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository)
       env:
         COS_BUCKET: ${{ secrets.COS_BUCKET }}
         COS_SECRET_ID: ${{ secrets.COS_SECRET_ID }}
