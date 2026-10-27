@@ -56,6 +56,7 @@ jobs:
         git diff --quiet --exit-code -- calcit.cirru
         calcit calcit.cirru --check-only --all-defs
         calcit calcit.cirru fix --workflow strict --verify --format json | jq -e '.data.workflow.status == "passed" and .diagnostics == []'
+        calcit calcit.cirru test app.schema --require-match --summary-only --format edn
 
     - name: Select CDN asset path
       id: asset-path

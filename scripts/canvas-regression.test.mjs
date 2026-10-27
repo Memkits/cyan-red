@@ -87,11 +87,20 @@ test('old empty and CirruQuote saves restore without changing state or dropping 
   const saved = [
     ["%{} 'Store\n  :ops $ []\n  :states $ {} $ :cursor ([])\n", c._$L_()],
     ["%{} 'Store\n  :ops $ quote $\n    rect 1 2\n  :states $ {} $ :cursor ([])\n", c._$L_(c._$L_('rect', '1', '2'))],
+    ["%{} 'Store\n  :ops $ quote $\n    rect 中文 :a |b (nested 1)\n  :states $ {} $ :cursor ([])\n", c._$L_(c._$L_('rect', '中文', ':a', '|b', c._$L_('nested', '1')))],
   ];
   for (const [raw, expected] of saved) {
     const restored = read_stored_store(raw);
     assert.ok(c._$e_(field(restored, t.ops), expected));
     assert.ok(c._$e_(field(restored, t.states), field(store, t.states)));
     assert.ok(c._$e_(read_stored_store(c.format_cirru_edn(restored)), restored));
+  }
+  for (const raw of [
+    "%{} 'Other\n  :ops $ []\n  :states $ {}\n",
+    "%{} 'Store\n  :ops $ []\n  :states $ []\n",
+    "%{} 'Store\n  :ops $ [] 1\n  :states $ {}\n",
+    "%{} 'Store\n  :ops $ []\n  :states $ {}\n  :surprise 1\n",
+  ]) {
+    assert.throws(() => read_stored_store(raw), 'Invalid saved data must not be repaired with defaults or ignored fields');
   }
 });
