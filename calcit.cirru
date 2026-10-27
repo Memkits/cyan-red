@@ -6,7 +6,7 @@
     {} (:description |) (:init-fn 'app.main/main!) (:mode :js) (:reload-fn 'app.main/reload!) (:target :browser)
       :feature-policy $ {}
       :modules $ [] |respo.calcit/ |respo-ui.calcit/ |reel.calcit/
-      :type-slots $ {}
+      :type-slots $ {} $ :dispatch-op |app.schema/Op
   :files $ {}
     'app.comp.container $ %{} 'FileEntry
       :defs $ {}
@@ -61,8 +61,7 @@
                     hint-fn $ {}
                       :args $ [] (:: 'Map 'Tag 'Dynamic)
                         :: 'Fn $ {}
-                          :args $ [] 'Dynamic
-                          :rest 'Dynamic
+                          :args $ [] *dispatch-op
                           :return 'Unit
                       :return 'Unit
                     d! $ :: :states cursor $ assoc state :content
@@ -71,8 +70,7 @@
                     hint-fn $ {}
                       :args $ [] (:: 'Map 'Tag 'Dynamic)
                         :: 'Fn $ {}
-                          :args $ [] 'Dynamic
-                          :rest 'Dynamic
+                          :args $ [] *dispatch-op
                           :return 'Unit
                       :return 'Unit
                     when
@@ -210,11 +208,6 @@
           :code $ quote $ defn main! ()
             if config/dev? $ load-console-formatter!
             println "|Running mode:" $ if config/dev? |dev |release
-            render-app!
-            add-watch! *reel :changes $ fn (reel prev) (render-app!)
-            listen-devtools! |k dispatch-wire!
-            add-event-listener! |beforeunload $ fn (_) (persist-storage!)
-            repeat! 60 persist-storage!
             match
               storage-get $ .unwrap $ get config/site :storage-key
               (:some raw)
@@ -222,6 +215,11 @@
                   dispatch! $ :: :hydrate-storage $ app.schema/read-stored-store raw
                   , &unit
               (:none) &unit
+            render-app!
+            add-watch! *reel :changes $ fn (reel prev) (render-app!)
+            listen-devtools! |k dispatch-wire!
+            add-event-listener! |beforeunload $ fn (_) (persist-storage!)
+            repeat! 60 persist-storage!
             println "|App started."
           :examples $ []
           :schema $ :: 'Fn $ {} (:return 'Unit)
@@ -254,7 +252,7 @@
             :args $ []
         'render-app! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn render-app! ()
-            render! mount-target (comp-container @*reel) dispatch-wire!
+            render! mount-target (comp-container @*reel) dispatch!
           :examples $ []
           :schema $ :: 'Fn $ {} (:return 'Unit)
             :args $ []
@@ -284,6 +282,20 @@
             js-ffi.browser :refer $ query-selector add-event-listener! set-interval! storage-get storage-set!
     'app.schema $ %{} 'FileEntry
       :defs $ {}
+        'Op $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ defenum Op
+            :states (:: 'List 'Dynamic) 'Dynamic
+            :ops $ :: 'List $ :: 'List 'Dynamic
+            :hydrate-storage 'app.schema/Store
+            :reel/toggle
+            :reel/recall 'Number
+            :reel/run
+            :reel/step
+            :reel/merge
+            :reel/reset
+            :reel/remove 'Number
+          :examples $ []
+          :schema $ :: 'EnumDef
         'Store $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defstruct Store
             :states $ :: 'Map 'Tag 'Dynamic
@@ -294,7 +306,7 @@
           :code $ quote $ defn read-ops (value)
             decode-map-as
               if (cirru-quote? value)
-                &cirru-quote:to-list $ decode-map-as value 'CirruQuote
+                .unwrap $ .to-list $ decode-map-as value 'CirruQuote
                 , value
               :: 'List $ :: 'List 'Dynamic
           :examples $ []
@@ -321,10 +333,28 @@
             :args $ [] 'Dynamic
         'read-stored-store $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn read-stored-store (raw)
-            read-store $ parse-cirru-edn raw
+            let
+                value $ parse-cirru-edn raw
+              if (struct? value)
+                if
+                  = (&struct:get-name value) :Store
+                  let
+                      fields $ decode-map-as (.to-map value) (:: 'Map 'Tag 'Dynamic)
+                    decode-map-as
+                      .assoc fields :ops $ read-ops $ .unwrap (get fields :ops)
+                      , 'app.schema/Store
+                  raise |Expected-Store
+                raise |Expected-Store
           :examples $ []
           :schema $ :: 'Fn $ {} (:return 'app.schema/Store)
             :args $ [] 'String
+          :tests $ [] $ %{} 'TestEntry (:name |legacy-quote-tree-and-roundtrip)
+            :code $ quote $ let
+                restored $ read-stored-store "|%{} 'Store\n  :ops $ quote $\n    rect 中文 :a |b (nested 1)\n  :states $ {} $ :cursor ([])\n"
+              assert=
+                [] $ [] |rect "|中文" |:a ||b $ [] |nested |1
+                , restored.:ops
+              assert= restored $ read-stored-store $ format-cirru-edn restored
         'store $ %{} 'CodeEntry (:doc |)
           :code $ quote $ def store
             Store :states
