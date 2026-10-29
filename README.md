@@ -6,6 +6,23 @@
 
 Demo http://r.tiye.me/Memkits/cyan-red/ .
 
+### Calcit 0.32.0 迁移候选：使用者影响
+
+CLI/procs 配对正式 0.32.0，需要重新安装完整图、生成 JS 并刷新。
+UI 模块暂为本地候选，正式标签整图尚待验证。Canvas 固定绘制与 Meta+Enter
+提交、旧存档恢复和 HUD 保持原行为；DSL 执行器仍为 TODO。
+
+官方转换 12 处类型写法，28 个定义 schema 不变；原 strict、附带存档测试与
+Canvas 回归保留，不增加强转或放宽门禁。Actions 使用已核对对应 SHA 的
+精确正式 tag，COS 内置 verify、前端路径及一小时依赖隔离不变。
+本地完整 strict（diagnostics 为空）、全部 217 个定义、原生存档测试一项、
+原八项 JS Canvas/键盘/状态/存档回归、构建和 immutable 安装通过。
+实际页面验证固定矩形、合成输入和刷新恢复，浏览器 warn/error 为空；
+Meta+Enter 的解析派发由原 JS 回归验证，不把固定矩形当作 DSL 执行结果。
+原存档测试仍输出 Struct `.to-map` 动态查找提示，未宣称已消除该边界。
+独立只读评审无待处理问题；正式标签整图和 PR/Linux CI 尚待验证。
+下方 0.31 说明为历史记录。
+
 ### Usages
 
 _TODO_
