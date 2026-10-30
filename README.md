@@ -6,14 +6,21 @@
 
 Demo http://r.tiye.me/Memkits/cyan-red/ .
 
-### Usages
+### 使用者影响
 
-_TODO_
+CLI / `@calcit/procs` 配对正式 **0.32.1**，升级后整图安装、重新生成JS并完整刷新。
+使用已发布UI **0.9.0**、Respo **0.17.1**、JS-FFI **0.2.9**、Reel **0.7.0-alpha.5**，
+传递Router仍有alpha，不宣称整图全部稳定，不使用本地候选或未发布版本。
 
-使用配对的正式 Calcit CLI / `@calcit/procs` **0.31.0**、Caps 0.1.1、
-Node.js 24 和 Yarn 4.18.0。依赖已发布的精确 tag：Reel `0.7.0-alpha.3`、
-Respo `0.17.0-alpha.3`、UI `0.9.0-alpha.3`、js-ffi `0.2.6`，Router 传递依赖为
-`0.9.0-alpha.2`。升级后重新安装整图并生成 JS；Yarn 使用统一的一小时新包隔离期。
+官方工具转换12处旧类型标注，28个定义schema保持。Canvas固定绘制、Meta+Enter
+提交、原存档恢复和HUD不变；DSL绘图执行器仍为TODO，不能把矩形当作DSL执行结果。
+原完整strict、全定义、一项原生存档测试及八项JS Canvas/键盘/状态/存档回归保留，
+不新增强转、预算或验证脚本。真实Caps strict/toolchain、原测试、构建与immutable通过。
+
+此前0.32.0候选已验收固定矩形、合成输入和刷新恢复；本次未重跑浏览器，不操作真实
+存档。原生存档测试仍提示Struct `.to-map` 动态查找，不为清零伪造宿主或名义证明。
+npm等待保持一小时，无单包例外；artifact仅升级正式patch，生产路径和COS内置verify
+保持。本PR不合并、部署生产或发版。
 
 ### 旧存档与操作类型
 
@@ -47,8 +54,8 @@ node --test scripts/canvas-regression.test.mjs
 
 `yarn build` 编译默认 JS/browser entry 并构建一次；`yarn dev` 先编译再启动 Vite，
 持续编辑时在另一终端运行 `calcit calcit.cirru -w`。CI 保留 canonical、全部定义、完整 strict、
-原 8 项 Canvas/输入/旧存档回归；存档用例扩展了嵌套 Unicode token 与非法字段拒绝。
-新增 Calcit definition `:tests` 直接验证旧树恢复和序列化往返，原生与宿主回归各守其边界。
+原 8 项 Canvas/输入/旧存档回归；原存档用例保留嵌套 Unicode token 与非法字段拒绝。
+原 Calcit definition `:tests` 直接验证旧树恢复和序列化往返，原生与宿主回归各守其边界。
 
 canonical source 为 `calcit.cirru` / `deps.cirru`。修改 Snapshot 前读取
 `calcit docs agents --contract`，通过 query/tree 与带 revision 守卫的事务修改。
@@ -59,7 +66,7 @@ PR 前端保存在现有 artifact 和独立 COS 预览前缀，生产 CDN base�
 
 - Canvas 与 KeyboardEvent 保留原有宿主身份信任边界，原生测试只验证纯数据恢复，不代表原生 Canvas 支持。
 - 状态、事件载荷和语法树成员仍含显式 Dynamic，使用处需要校验。
-- 旧 Store 名称校验暂用一次 `&struct:get-name`，仅在 `struct?` 守卫后用于存档边界；0.31.0 没有对应公开名称 getter。
+- 旧Store名称筛选保留一次受 `struct?` 守卫的内部 `&struct:get-name`；名称只是wire数据条件，不代表来源或授权，之后完整解码并重建本地Store。0.32.1的只读元数据API定位及同路径动态提示已反馈到[上游收敛议题](https://github.com/calcit-lang/calcit/issues/2456#issuecomment-6513364453)，不为应用增加特例或放宽门禁。
 
 ### Name Original
 
