@@ -85,7 +85,7 @@ jobs:
 
     - name: Preserve PR frontend for acceptance
       if: github.event_name == 'pull_request'
-      uses: actions/upload-artifact@v7.0.0
+      uses: actions/upload-artifact@v7.0.2
       with:
         name: cyan-red-pr-frontend
         path: dist
