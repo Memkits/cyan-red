@@ -8,19 +8,15 @@ Demo http://r.tiye.me/Memkits/cyan-red/ .
 
 ### 使用者影响
 
-CLI / `@calcit/procs` 配对正式 **0.32.1**，升级后整图安装、重新生成JS并完整刷新。
-使用已发布UI **0.9.0**、Respo **0.17.1**、JS-FFI **0.2.9**、Reel **0.7.0-alpha.5**，
-传递Router仍有alpha，不宣称整图全部稳定，不使用本地候选或未发布版本。
+CLI 与 `@calcit/procs` 配对正式 0.35.1。升级后重新安装完整依赖图、生成 JS 并刷新。
+依赖为正式 Respo 0.19.4、Reel 0.9.2、UI 0.15.1、JS FFI 0.2.13 和 Router 0.12.1。
 
-官方工具转换12处旧类型标注，28个定义schema保持。Canvas固定绘制、Meta+Enter
-提交、原存档恢复和HUD不变；DSL绘图执行器仍为TODO，不能把矩形当作DSL执行结果。
-原完整strict、全定义、一项原生存档测试及八项JS Canvas/键盘/状态/存档回归保留，
-不新增强转、预算或验证脚本。真实Caps strict/toolchain、原测试、构建与immutable通过。
+组件状态路径使用 CoordKey union，派发使用 AnyEnum，开发面板用 Option 表达缺席。
+Canvas 固定绘制、Meta+Enter、存档恢复和 HUD 沿用。DSL 绘图执行器仍待实现。
+旧 Struct 在守卫后转换为字段 Map，再做原有恢复校验；Canvas 夹具使用 Respo 的 EffectParams。
 
-此前0.32.0候选已验收固定矩形、合成输入和刷新恢复；本次未重跑浏览器，不操作真实
-存档。原生存档测试仍提示Struct `.to-map` 动态查找，不为清零伪造宿主或名义证明。
-npm等待保持一小时，无单包例外；artifact仅升级正式patch，生产路径和COS内置verify
-保持。本PR不合并、部署生产或发版。
+223 个全定义、完整 strict、原一项存档测试、八项 JS 回归、构建和不可变安装通过。
+浏览器交互待验收。COS 使用原隔离路径和 Action 内置校验。
 
 ### 旧存档与操作类型
 

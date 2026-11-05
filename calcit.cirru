@@ -12,11 +12,11 @@
       :defs $ {}
         'CanvasContextHost $ %{} 'CodeEntry (:doc |)
           :code $ quote $ deftrait CanvasContextHost (:fill-style 'String) (:stroke-style 'String)
-            .clear-rect! $ quote $ Fn app.comp.container/CanvasContextHost Number Number Number Number (-> Unit)
-            .move-to! $ quote $ Fn app.comp.container/CanvasContextHost Number Number (-> Unit)
-            .rect! $ quote $ Fn app.comp.container/CanvasContextHost Number Number Number Number (-> Unit)
-            .stroke! $ quote $ Fn app.comp.container/CanvasContextHost (-> Unit)
-            .fill! $ quote $ Fn app.comp.container/CanvasContextHost (-> Unit)
+            .clear-rect! $ Fn app.comp.container/CanvasContextHost Number Number Number Number $ -> Unit
+            .move-to! $ Fn app.comp.container/CanvasContextHost Number Number $ -> Unit
+            .rect! $ Fn app.comp.container/CanvasContextHost Number Number Number Number $ -> Unit
+            .stroke! $ Fn app.comp.container/CanvasContextHost $ -> Unit
+            .fill! $ Fn app.comp.container/CanvasContextHost $ -> Unit
           :examples $ []
           :ffi $ {} (:backend :js) (:kind :external-object) (:target :browser)
             :names $ {} (:clear-rect! |clearRect) (:fill! |fill) (:fill-style |fillStyle) (:move-to! |moveTo) (:rect! |rect) (:stroke! |stroke) (:stroke-style |strokeStyle)
@@ -24,7 +24,7 @@
           :schema $ quote Trait
         'CanvasElementHost $ %{} 'CodeEntry (:doc |)
           :code $ quote $ deftrait CanvasElementHost (:offset-width 'Number) (:offset-height 'Number) (:width 'Number) (:height 'Number)
-            .get-context $ quote $ Fn app.comp.container/CanvasElementHost String (-> app.comp.container/CanvasContextHost)
+            .get-context $ Fn app.comp.container/CanvasElementHost String $ -> app.comp.container/CanvasContextHost
           :examples $ []
           :ffi $ {} (:backend :js) (:kind :external-object) (:target :browser)
             :names $ {} (:get-context |getContext) (:height |height) (:offset-height |offsetHeight) (:offset-width |offsetWidth) (:width |width)
@@ -38,7 +38,7 @@
                 state $ decode-map-as
                   .unwrap-or (get states-map :data)
                     {} $ :content |
-                  :: 'Map 'Tag 'Dynamic
+                  Map Tag Dynamic
                 content $ decode-map-as
                   .unwrap $ get state :content
                   , 'String
@@ -50,13 +50,13 @@
                       Fn *dispatch-op $ -> Unit
                       -> Unit
                     d! $ :: :states cursor $ assoc state :content
-                      event-value $ decode-map-as e $ :: 'Map 'Tag 'Dynamic
+                      event-value $ decode-map-as e $ Map Tag Dynamic
                   :on-keydown $ fn (e d!)
                     hint-fn $ Fn (Map Tag Dynamic)
                       Fn *dispatch-op $ -> Unit
                       -> Unit
                     when
-                      submit-shortcut? $ decode-map-as e $ :: 'Map 'Tag 'Dynamic
+                      submit-shortcut? $ decode-map-as e $ Map Tag Dynamic
                       d! $ :: :ops $ match (.parse-cirru-list content)
                         (:ok parsed) parsed
                         (:err message) (raise message)
@@ -74,9 +74,11 @@
                 div
                   {} $ :style $ .merge ui/expand ui/column
                   div ({}) (<> |TODO)
-                  comp-codearea $ decode-map-as (>> states :code) (:: 'Map 'Tag 'Dynamic)
+                  comp-codearea $ decode-map-as (>> states :code) (Map Tag Dynamic)
                 comp-draw ops
-                when dev? $ comp-reel (>> states :reel) reel $ {}
+                if dev?
+                  Option :some $ comp-reel (>> states :reel) reel $ {}
+                  Option :none
           :examples $ []
           :schema $ quote $ Fn (Map Tag Dynamic) (-> respo.schema/Component) (:features :js-ffi)
         'comp-draw $ %{} 'CodeEntry (:doc |)
@@ -169,10 +171,10 @@
         'dispatch! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn dispatch! (op)
             when config/dev? $ println |Dispatch: op
-            reset! *reel $ decode-map-as (reel-updater app.updater/update-wire-store @*reel op) (:: 'Map 'Tag 'Dynamic)
+            reset! *reel $ decode-map-as (reel-updater app.updater/update-wire-store @*reel op) (Map Tag Dynamic)
             , &unit
           :examples $ []
-          :schema $ quote $ Fn Enum (-> Unit)
+          :schema $ quote $ Fn AnyEnum (-> Unit)
         'dispatch-wire! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn dispatch-wire! (op)
             if (enum? op) (dispatch! op) (raise |Expected-Enum-operation)
@@ -214,7 +216,7 @@
             if (nil? build-errors)
               do (remove-watch! *reel :changes) (clear-cache!)
                 add-watch! *reel :changes $ fn (reel prev) (render-app!)
-                reset! *reel $ decode-map-as (refresh-reel @*reel schema/store app.updater/update-wire-store) (:: 'Map 'Tag 'Dynamic)
+                reset! *reel $ decode-map-as (refresh-reel @*reel schema/store app.updater/update-wire-store) (Map Tag Dynamic)
                 hud! |ok~ |Ok
               hud! |error build-errors
             , &unit
@@ -252,24 +254,22 @@
       :defs $ {}
         'Op $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defenum Op
-            :states
-              quote $ List Dynamic
-              , 'Dynamic
-            :ops $ quote $ List (List Dynamic)
-            :hydrate-storage 'app.schema/Store
+            :states (List respo.schema/CoordKey) Dynamic
+            :ops $ List $ List respo.schema/CoordKey
+            :hydrate-storage app.schema/Store
             :reel/toggle
-            :reel/recall 'Number
+            :reel/recall Number
             :reel/run
             :reel/step
             :reel/merge
             :reel/reset
-            :reel/remove 'Number
+            :reel/remove Number
           :examples $ []
           :schema $ quote EnumDef
         'Store $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defstruct Store
-            :states $ quote $ Map Tag Dynamic
-            :ops $ quote $ List (List Dynamic)
+            :states $ Map Tag Dynamic
+            :ops $ List $ List Dynamic
           :examples $ []
           :schema $ quote StructDef
         'read-ops $ %{} 'CodeEntry (:doc |)
@@ -278,7 +278,7 @@
               if (cirru-quote? value)
                 .unwrap $ .to-list $ decode-map-as value 'CirruQuote
                 , value
-              :: 'List $ :: 'List 'Dynamic
+              List $ List Dynamic
           :examples $ []
           :schema $ quote $ Fn Dynamic
             -> $ List $ List Dynamic
@@ -287,11 +287,11 @@
             if (struct? value)
               struct-match value
                 Store current $ let
-                    fields $ .to-map current
+                    fields $ &struct:to-map current
                     normalized $ Store :states
                       decode-map-as
                         .unwrap $ get fields :states
-                        :: 'Map 'Tag 'Dynamic
+                        Map Tag Dynamic
                       , :ops $ read-ops
                         .unwrap $ get fields :ops
                   if (= current normalized) current normalized
@@ -307,7 +307,7 @@
                 if
                   = (&struct:get-name value) :Store
                   let
-                      fields $ decode-map-as (.to-map value) (:: 'Map 'Tag 'Dynamic)
+                      fields $ decode-map-as (&struct:to-map value) (Map Tag Dynamic)
                     decode-map-as
                       .assoc fields :ops $ read-ops $ .unwrap (get fields :ops)
                       , 'app.schema/Store
@@ -345,14 +345,14 @@
             match op
               (:states cursor data)
                 app.schema/read-store $ update-states store
-                  decode-map-as cursor $ :: 'List 'Dynamic
+                  decode-map-as cursor $ List respo.schema/CoordKey
                   , data
               (:ops data)
                 assoc store :ops $ app.schema/read-ops data
               (:hydrate-storage data) (app.schema/read-store data)
               _ $ do (println "|unknown op:" op) store
           :examples $ []
-          :schema $ quote $ Fn app.schema/Store Enum String Number (-> app.schema/Store)
+          :schema $ quote $ Fn app.schema/Store AnyEnum String Number (-> app.schema/Store)
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.updater
           :require $ respo.cursor :refer $ update-states
