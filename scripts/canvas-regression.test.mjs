@@ -5,15 +5,17 @@ import { draw_effect, comp_codearea, submit_shortcut_$q_ } from '../js-out/app.c
 import { store, read_store, read_stored_store } from '../js-out/app.schema.mjs';
 import { updater } from '../js-out/app.updater.mjs';
 import { component_$q_, component_tree } from '../js-out/respo.util.detect.mjs';
+import { EffectParams } from '../js-out/respo.schema.mjs';
 
-const t = c.init_tags(['args', 'method', 'mount', 'update', 'unmount', 'cursor', 'code', 'data', 'content', 'event', 'input', 'keydown', 'children', 'some', 'value', 'states', 'ops']);
+const t = c.init_tags(['args', 'method', 'action', 'target', 'at-place?', 'mount', 'update', 'unmount', 'cursor', 'code', 'data', 'content', 'event', 'input', 'keydown', 'children', 'some', 'value', 'states', 'ops']);
 const map = c._$n__$M_;
 const field = (v, k) => c.option_$o_unwrap(c.get(v, k));
 const nth = (v, i) => c.option_$o_unwrap(c.nth(v, i));
 const en = c._$n_enum_$o_nth;
 const runEffect = (action, el) => {
   const effect = draw_effect(c._$L_());
-  return field(effect, t.method)(field(effect, t.args), c._$L_(action, el, false));
+  const params = c._$n__PCT__$M_(EffectParams, t.action, action, t.target, el, t['at-place?'], false);
+  return field(effect, t.method)(field(effect, t.args), params);
 };
 for (const action of [t.mount, t.update]) {
   test(`${action} Canvas effect preserves dimensions, styles and drawing calls`, () => {
