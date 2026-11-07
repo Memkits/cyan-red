@@ -6,7 +6,7 @@
     {} (:description |) (:init-fn 'app.main/main!) (:mode :js) (:reload-fn 'app.main/reload!) (:target :browser)
       :feature-policy $ {}
       :modules $ [] |respo.calcit/ |respo-ui.calcit/ |reel.calcit/
-      :type-slots $ {} $ :dispatch-op |app.schema/Op
+      :type-slots $ {} $ :dispatch-op 'app.schema/Op
   :files $ {}
     'app.comp.container $ %{} 'FileEntry
       :defs $ {}
@@ -34,7 +34,9 @@
           :code $ quote $ defcomp comp-codearea (states)
             let
                 states-map states
-                cursor $ .unwrap $ get states-map :cursor
+                cursor $ decode-map-as
+                  .unwrap $ get states-map :cursor
+                  List respo.schema/CoordKey
                 state $ decode-map-as
                   .unwrap-or (get states-map :data)
                     {} $ :content |
@@ -46,19 +48,17 @@
                 textarea $ {} (:value content) (:placeholder |Content)
                   :style $ .merge ui/expand ui/textarea $ {} (:font-family ui/font-code)
                   :on-input $ fn (e d!)
-                    hint-fn $ Fn (Map Tag Dynamic)
-                      Fn *dispatch-op $ -> Unit
+                    hint-fn $ Fn respo.schema/RespoEvent
+                      Fn app.schema/Op $ -> Unit
                       -> Unit
-                    d! $ :: :states cursor $ assoc state :content
-                      event-value $ decode-map-as e $ Map Tag Dynamic
+                    d! $ app.schema/Op :states cursor $ assoc state :content (event-value e)
                   :on-keydown $ fn (e d!)
-                    hint-fn $ Fn (Map Tag Dynamic)
-                      Fn *dispatch-op $ -> Unit
+                    hint-fn $ Fn respo.schema/RespoEvent
+                      Fn app.schema/Op $ -> Unit
                       -> Unit
-                    when
-                      submit-shortcut? $ decode-map-as e $ Map Tag Dynamic
-                      d! $ :: :ops $ match (.parse-cirru-list content)
-                        (:ok parsed) parsed
+                    when (submit-shortcut? e)
+                      d! $ app.schema/Op :ops $ match (.parse-cirru-list content)
+                        (:ok parsed) (app.schema/read-ops parsed)
                         (:err message) (raise message)
                     , &unit
           :examples $ []
@@ -66,7 +66,7 @@
         'comp-container $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defcomp comp-container (reel)
             let
-                store $ app.schema/read-store $ .unwrap (get reel :store)
+                store $ :store reel
                 states store.:states
                 ops store.:ops
               div
@@ -77,17 +77,17 @@
                   comp-codearea $ decode-map-as (>> states :code) (Map Tag Dynamic)
                 comp-draw ops
                 if dev?
-                  Option :some $ comp-reel (>> states :reel) reel $ {}
+                  Option :some $ comp-typed-reel (>> states :reel) reel $ {}
                   Option :none
           :examples $ []
-          :schema $ quote $ Fn (Map Tag Dynamic) (-> respo.schema/Component) (:features :js-ffi)
+          :schema $ quote $ Fn (reel.typed/State app.schema/Op app.schema/Store) (-> respo.schema/Component) (:features :js-ffi)
         'comp-draw $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defcomp comp-draw (ops)
             [] (draw-effect ops)
               create-element :canvas $ {} $ :style ui/expand
           :examples $ []
           :schema $ quote $ Fn
-            List $ List Dynamic
+            List $ List app.schema/CirruNode
             -> respo.schema/Component
         'draw-effect $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defeffect draw-effect (ops) (action el at?)
@@ -109,7 +109,7 @@
                 .fill! ctx
           :examples $ []
           :schema $ quote $ Fn
-            List $ List Dynamic
+            List $ List app.schema/CirruNode
             -> respo.schema/Effect
             :features :js-ffi
         'effect-code $ %{} 'CodeEntry (:doc |)
@@ -120,33 +120,30 @@
           :schema $ quote $ Fn (-> respo.schema/Effect)
         'event-value $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn event-value (event)
-            decode-map-as
-              .unwrap $ get event :value
-              , 'String
+            decode-map-as (:value event) 'String
           :examples $ []
-          :schema $ quote $ Fn (Map Tag Dynamic) (-> String)
+          :schema $ quote $ Fn respo.schema/RespoEvent (-> String)
         'submit-shortcut? $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn submit-shortcut? (event)
-            let
-                keyboard $ unsafe-coerce
-                  .unwrap $ get event :event
-                  , js-ffi.browser/KeyboardEventHost
-              if
-                and (keyboard :meta-key?)
-                  = |Enter $ keyboard :key
-                do (.prevent-default! keyboard) true
-                , false
+            if
+              and
+                = true $ :meta? event
+                = |Enter $ :key event
+              do
+                .prevent-default! $ :event event
+                , true
+              , false
           :examples $ []
-          :schema $ quote $ Fn (Map Tag Dynamic) (-> Bool) (:features :js-ffi)
+          :schema $ quote $ Fn respo.schema/RespoEvent (-> Bool) (:features :js-ffi)
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.comp.container
           :require (respo-ui.core :as ui)
             respo-ui.core :refer $ hsl
             respo.core :refer $ defcomp defeffect <> >> div button textarea span input create-element
             respo.comp.space :refer $ =<
-            reel.comp.reel :refer $ comp-reel
             app.config :refer $ dev?
             |@mvc-works/codearea :refer $ codearea
+            reel.comp.reel :refer $ comp-typed-reel
     'app.config $ %{} 'FileEntry
       :defs $ {}
         'dev? $ %{} 'CodeEntry (:doc |)
@@ -164,22 +161,42 @@
     'app.main $ %{} 'FileEntry
       :defs $ {}
         '*reel $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ defref *reel
-            -> reel-schema/reel (assoc :base schema/store) (assoc :store schema/store)
+          :code $ quote $ defref *reel (typed/new-reel schema/store)
           :examples $ []
-          :schema $ quote $ Ref (Map Tag Dynamic)
+          :schema $ quote $ Ref (reel.typed/State app.schema/Op app.schema/Store)
         'dispatch! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn dispatch! (op)
             when config/dev? $ println |Dispatch: op
-            reset! *reel $ decode-map-as (reel-updater app.updater/update-wire-store @*reel op) (Map Tag Dynamic)
+            cond
+                = (enum-definition op) (Option :some schema/Op)
+                dispatch-resolved! $ decode-map-as op 'app.schema/Op
+              (= (enum-definition op) (Option :some typed/Control))
+                dispatch-resolved! $ decode-map-as op 'reel.typed/Control
+              true $ match (typed/decode-control op)
+                (:some control) (dispatch-resolved! control)
+                (:none)
+                  match op
+                    (:states cursor data)
+                      dispatch-resolved! $ schema/Op :states
+                        decode-map-as cursor $ List respo.schema/CoordKey
+                        , data
+                    (:ops data)
+                      dispatch-resolved! $ schema/Op :ops $ schema/read-ops data
+                    (:hydrate-storage data)
+                      dispatch-resolved! $ schema/Op :hydrate-storage $ schema/read-store data
+                    _ $ eprintln "|unknown op:" op
             , &unit
           :examples $ []
           :schema $ quote $ Fn AnyEnum (-> Unit)
-        'dispatch-wire! $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ defn dispatch-wire! (op)
-            if (enum? op) (dispatch! op) (raise |Expected-Enum-operation)
+        'dispatch-resolved! $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ defn dispatch-resolved! (op)
+            hint-fn $ Fn app.schema/ResolvedOp (-> Unit) (:features :js-ffi)
+            reset! *reel $ match op
+              (reel.typed/Control control) (typed/apply-control updater @*reel control)
+              (app.schema/Op action)
+                typed/record-op updater @*reel action (generate-id!) (host/now-ms)
+            , &unit
           :examples $ []
-          :schema $ quote $ Fn Dynamic (-> Unit)
         'main! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn main! ()
             if config/dev? $ load-console-formatter!
@@ -188,12 +205,12 @@
               storage-get $ .unwrap $ get config/site :storage-key
               (:some raw)
                 do
-                  dispatch! $ :: :hydrate-storage $ app.schema/read-stored-store raw
+                  dispatch-resolved! $ schema/Op :hydrate-storage $ app.schema/read-stored-store raw
                   , &unit
               (:none) &unit
             render-app!
             add-watch! *reel :changes $ fn (reel prev) (render-app!)
-            listen-devtools! |k dispatch-wire!
+            listen-devtools! |k dispatch!
             add-event-listener! |beforeunload $ fn (_) (persist-storage!)
             repeat! 60 persist-storage!
             println "|App started."
@@ -208,7 +225,7 @@
           :code $ quote $ defn persist-storage! ()
             storage-set!
               .unwrap $ get config/site :storage-key
-              format-cirru-edn $ .unwrap $ get @*reel :store
+              format-cirru-edn $ :store @*reel
           :examples $ []
           :schema $ quote $ Fn (-> Unit)
         'reload! $ %{} 'CodeEntry (:doc |)
@@ -216,7 +233,7 @@
             if (nil? build-errors)
               do (remove-watch! *reel :changes) (clear-cache!)
                 add-watch! *reel :changes $ fn (reel prev) (render-app!)
-                reset! *reel $ decode-map-as (refresh-reel @*reel schema/store app.updater/update-wire-store) (Map Tag Dynamic)
+                reset! *reel $ typed/refresh updater @*reel schema/store
                 hud! |ok~ |Ok
               hud! |error build-errors
             , &unit
@@ -244,32 +261,33 @@
             app.updater :refer $ updater
             app.schema :as schema
             reel.util :refer $ listen-devtools!
-            reel.core :refer $ reel-updater refresh-reel
-            reel.schema :as reel-schema
             app.config :as config
             |./calcit.build-errors :default build-errors
             |bottom-tip :default hud!
             js-ffi.browser :refer $ query-selector add-event-listener! set-interval! storage-get storage-set!
+            reel.typed :as typed
+            js-ffi.shared :as host
     'app.schema $ %{} 'FileEntry
       :defs $ {}
+        'CirruNode $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ defunion CirruNode String (List CirruNode)
+          :examples $ []
+          :schema $ quote UnionDef
         'Op $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defenum Op
             :states (List respo.schema/CoordKey) Dynamic
-            :ops $ List $ List respo.schema/CoordKey
+            :ops $ List $ List app.schema/CirruNode
             :hydrate-storage app.schema/Store
-            :reel/toggle
-            :reel/recall Number
-            :reel/run
-            :reel/step
-            :reel/merge
-            :reel/reset
-            :reel/remove Number
           :examples $ []
           :schema $ quote EnumDef
+        'ResolvedOp $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ defunion ResolvedOp Op reel.typed/Control
+          :examples $ []
+          :schema $ quote UnionDef
         'Store $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defstruct Store
             :states $ Map Tag Dynamic
-            :ops $ List $ List Dynamic
+            :ops $ List $ List app.schema/CirruNode
           :examples $ []
           :schema $ quote StructDef
         'read-ops $ %{} 'CodeEntry (:doc |)
@@ -278,10 +296,10 @@
               if (cirru-quote? value)
                 .unwrap $ .to-list $ decode-map-as value 'CirruQuote
                 , value
-              List $ List Dynamic
+              List $ List app.schema/CirruNode
           :examples $ []
           :schema $ quote $ Fn Dynamic
-            -> $ List $ List Dynamic
+            -> $ List $ List app.schema/CirruNode
         'read-store $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn read-store (value)
             if (struct? value)
@@ -332,27 +350,16 @@
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.schema
     'app.updater $ %{} 'FileEntry
-      :defs $ {}
-        'update-wire-store $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ defn update-wire-store (store op op-id op-time)
-            if (enum? op)
-              updater (app.schema/read-store store) op (decode-map-as op-id 'String) (decode-map-as op-time 'Number)
-              raise |Expected-Enum-operation
-          :examples $ []
-          :schema $ quote $ Fn Dynamic Dynamic Dynamic Dynamic (-> app.schema/Store)
-        'updater $ %{} 'CodeEntry (:doc |)
+      :defs $ {} $ 'updater
+        %{} 'CodeEntry (:doc |)
           :code $ quote $ defn updater (store op op-id op-time)
             match op
               (:states cursor data)
-                app.schema/read-store $ update-states store
-                  decode-map-as cursor $ List respo.schema/CoordKey
-                  , data
-              (:ops data)
-                assoc store :ops $ app.schema/read-ops data
-              (:hydrate-storage data) (app.schema/read-store data)
-              _ $ do (println "|unknown op:" op) store
+                app.schema/read-store $ update-states store cursor data
+              (:ops data) (assoc store :ops data)
+              (:hydrate-storage data) data
           :examples $ []
-          :schema $ quote $ Fn app.schema/Store AnyEnum String Number (-> app.schema/Store)
+          :schema $ quote $ Fn app.schema/Store app.schema/Op String Number (-> app.schema/Store)
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.updater
           :require $ respo.cursor :refer $ update-states
