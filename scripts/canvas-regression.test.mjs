@@ -5,6 +5,7 @@ import { draw_effect, comp_codearea, submit_shortcut_$q_ } from '../js-out/app.c
 import { store, read_store, read_stored_store } from '../js-out/app.schema.mjs';
 import { updater } from '../js-out/app.updater.mjs';
 import { component_$q_, component_tree } from '../js-out/respo.util.detect.mjs';
+import { event__GT_edn } from '../js-out/respo.util.format.mjs';
 import { EffectParams } from '../js-out/respo.schema.mjs';
 
 const t = c.init_tags(['args', 'method', 'action', 'target', 'at-place?', 'mount', 'update', 'unmount', 'cursor', 'code', 'data', 'content', 'event', 'input', 'keydown', 'children', 'some', 'value', 'states', 'ops']);
@@ -39,7 +40,7 @@ test('Canvas trusted boundary rejects missing 2d context', () => {
 test('Meta+Enter prevents default while other keyboard events do not submit', () => {
   for (const [metaKey, key, expected] of [[true, 'Enter', true], [false, 'Enter', false], [true, 'x', false]]) {
     let prevented = 0;
-    const event = map(t.event, { metaKey, key, preventDefault: () => { prevented++; } });
+    const event = event__GT_edn({ type: 'keydown', metaKey, key, preventDefault: () => { prevented++; } });
     assert.equal(submit_shortcut_$q_(event), expected);
     assert.equal(prevented, expected ? 1 : 0);
   }
@@ -64,7 +65,7 @@ test('code input dispatches one nested states Enum without corrupting Store', ()
   const cursor = c._$L_(t.code);
   const tree = comp_codearea(map(t.cursor, cursor));
   let next;
-  handler(tree, t.input)(map(t.value, 'rect 1 2'), (...args) => {
+  handler(tree, t.input)(event__GT_edn({ type: 'input', target: { value: 'rect 1 2' } }), (...args) => {
     assert.equal(args.length, 1);
     next = updater(store, args[0], 'input', 1);
   });
@@ -72,16 +73,16 @@ test('code input dispatches one nested states Enum without corrupting Store', ()
   assert.ok(c._$e_(field(next, t.ops), field(store, t.ops)));
 });
 test('Meta+Enter dispatches one parsed ops Enum accepted by updater', () => {
-  const tree = comp_codearea(map(t.cursor, c._$L_(t.code), t.data, map(t.content, 'rect 1 2')));
+  const tree = comp_codearea(map(t.cursor, c._$L_(t.code), t.data, map(t.content, 'rect 中文 (nested 1)')));
   let next, count = 0;
-  handler(tree, t.keydown)(map(t.event, { metaKey: true, key: 'Enter', preventDefault() {} }), (...args) => {
+  handler(tree, t.keydown)(event__GT_edn({ type: 'keydown', metaKey: true, key: 'Enter', preventDefault() {} }), (...args) => {
     assert.equal(args.length, 1);
     assert.equal(en(args[0], 0), t.ops);
     count++;
     next = updater(store, args[0], 'submit', 1);
   });
   assert.equal(count, 1);
-  assert.ok(c._$e_(field(next, t.ops), c._$L_(c._$L_('rect', '1', '2'))));
+  assert.ok(c._$e_(field(next, t.ops), c._$L_(c._$L_('rect', '中文', c._$L_('nested', '1')))));
 });
 test('old empty and CirruQuote saves restore without changing state or dropping ops', () => {
   assert.equal(read_store(store), store);

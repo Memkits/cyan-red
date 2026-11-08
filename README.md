@@ -8,21 +8,16 @@ Demo http://r.tiye.me/Memkits/cyan-red/ .
 
 ### 使用者影响
 
-CLI 与 `@calcit/procs` 配对正式 0.35.1。升级后重新安装完整依赖图、生成 JS 并刷新。
-依赖为正式 Respo 0.19.4、Reel 0.9.2、UI 0.15.1、JS FFI 0.2.13 和 Router 0.12.1。
+CLI 与 `@calcit/procs` 配对正式 0.37.0。升级后重新安装完整依赖图、生成 JS 并刷新。
+依赖为正式 Respo 0.19.5、Reel 0.10.0、UI 0.15.2、JS FFI 0.2.13 和 Router 0.12.2。
 
-组件状态路径使用 CoordKey union，派发使用 AnyEnum，开发面板用 Option 表达缺席。
-Canvas 固定绘制、Meta+Enter、存档恢复和 HUD 沿用。DSL 绘图执行器仍待实现。
-旧 Struct 在守卫后转换为字段 Map，再做原有恢复校验；Canvas 夹具使用 Respo 的 EffectParams。
-
-223 个全定义、完整 strict、原一项存档测试、八项 JS 回归、构建和不可变安装通过。
-浏览器交互待验收。COS 使用原隔离路径和 Action 内置校验。
+编辑器使用 RespoEvent，组件状态路径使用 CoordKey，应用操作和回放控制通过 `Op | reel.typed/Control` 区分。Canvas 固定绘制、Meta+Enter、存档恢复和 HUD 沿用。DSL 绘图执行器仍待实现。
 
 ### 旧存档与操作类型
 
 浏览器继续使用 `workflow` localStorage key 和 Cirru EDN 格式，保留 Store 的
 `:states` / `:ops`。旧 `:ops` 为 CirruQuote 时，使用公开 `.to-list` 并处理 Option，
-再校验为嵌套行 List；新的行 List 保持原值语义。原始 token、Unicode 与嵌套树按存档值
+再校验为嵌套行 List。每个节点是字符串或节点列表，含其他类型的行会在恢复阶段报错。原始 token、Unicode 与嵌套树按存档值
 转换，不从编辑器内容重新解析旧树。
 
 反序列化值先校验 Struct 与旧 `Store` 名称，转换并校验字段 Map，再由已有的
@@ -30,9 +25,7 @@ Canvas 固定绘制、Meta+Enter、存档恢复和 HUD 沿用。DSL 绘图执行
 错误数据不会填默认值或丢弃额外字段。已经验证的 Store 继续由 `read-store` 保留原对象身份。
 启动时先恢复成功，再渲染并注册 watch、定时保存和退出保存；坏存档会保留原文供修复。
 
-默认 entry 将 `dispatch-op` 绑定到 `app.schema/Op`，声明 states、ops、hydrate 及
-Reel 控制消息。输入/键盘回调的 `d!` 使用单个 Op 合同；浏览器 renderer 直接接入
-`dispatch!`，devtools 的开放入口继续由 `dispatch-wire!` 校验 Enum。
+默认 entry 将 `dispatch-op` 绑定到 `app.schema/Op`。编辑器派发具名事件，旧 Reel 控制在共用入口解码。回放操作不会进入应用记录。
 Canvas 固定矩形绘制、尺寸、样式与 Meta+Enter 提交行为保持现状，DSL 绘图执行器仍为 TODO。
 
 ### 修改与验证
