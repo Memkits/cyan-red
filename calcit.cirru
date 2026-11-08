@@ -24,7 +24,7 @@
           :schema $ quote Trait
         'CanvasElementHost $ %{} 'CodeEntry (:doc |)
           :code $ quote $ deftrait CanvasElementHost (:offset-width 'Number) (:offset-height 'Number) (:width 'Number) (:height 'Number)
-            .get-context $ Fn app.comp.container/CanvasElementHost String $ -> app.comp.container/CanvasContextHost
+            .get-context $ Fn app.comp.container/CanvasElementHost String $ -> (JsNullish JsObject)
           :examples $ []
           :ffi $ {} (:backend :js) (:kind :external-object) (:target :browser)
             :names $ {} (:get-context |getContext) (:height |height) (:offset-height |offsetHeight) (:offset-width |offsetWidth) (:width |width)
@@ -94,8 +94,8 @@
             when
               or (= action :mount) (= action :update)
               let
-                  element $ unsafe-coerce el CanvasElementHost
-                  ctx $ .get-context element |2d
+                  element $ js-cast el CanvasElementHost
+                  ctx $ js-cast (.get-context element |2d) CanvasContextHost
                   w $ element :offset-width
                   h $ element :offset-height
                 js-set element :width w

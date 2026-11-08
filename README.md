@@ -8,10 +8,10 @@ Demo http://r.tiye.me/Memkits/cyan-red/ .
 
 ### 使用者影响
 
-CLI 与 `@calcit/procs` 配对正式 0.37.0。升级后重新安装完整依赖图、生成 JS 并刷新。
+CLI 与 `@calcit/procs` 配对正式 0.38.0。升级后重新安装完整依赖图、生成 JS 并刷新。
 依赖为正式 Respo 0.19.5、Reel 0.10.0、UI 0.15.2、JS FFI 0.2.13 和 Router 0.12.2。
 
-编辑器使用 RespoEvent，组件状态路径使用 CoordKey，应用操作和回放控制通过 `Op | reel.typed/Control` 区分。Canvas 固定绘制、Meta+Enter、存档恢复和 HUD 沿用。DSL 绘图执行器仍待实现。
+编辑器使用 RespoEvent，组件状态路径使用 CoordKey，应用操作和回放控制通过 `Op | reel.typed/Control` 区分。Canvas 固定绘制、Meta+Enter、存档恢复和 HUD 沿用。启动和重绘会检查 Canvas 元素与 2D context，缺失 context 时明确报错。DSL 绘图执行器仍待实现。
 
 ### 旧存档与操作类型
 
@@ -49,11 +49,11 @@ node --test scripts/canvas-regression.test.mjs
 canonical source 为 `calcit.cirru` / `deps.cirru`。修改 Snapshot 前读取
 `calcit docs agents --contract`，通过 query/tree 与带 revision 守卫的事务修改。
 PR 前端保存在现有 artifact 和独立 COS 预览前缀，生产 CDN base、
-`dist/*` 的原 rsync 路径保持不变；COS Action v1.2.0 沿用内置公网校验。
+`dist/*` 的原 rsync 路径保持不变；COS Action v1.3.0 沿用内置公网校验。
 
 ### 限制
 
-- Canvas 与 KeyboardEvent 保留原有宿主身份信任边界，原生测试只验证纯数据恢复，不代表原生 Canvas 支持。
+- Canvas 通过宿主成员检查验证元素和 context。原生测试验证纯数据恢复，Canvas 由浏览器及 JS 宿主回归覆盖。
 - 状态、事件载荷和语法树成员仍含显式 Dynamic，使用处需要校验。
 - 旧Store名称筛选保留一次受 `struct?` 守卫的内部 `&struct:get-name`；名称只是wire数据条件，不代表来源或授权，之后完整解码并重建本地Store。0.32.1的只读元数据API定位及同路径动态提示已反馈到[上游收敛议题](https://github.com/calcit-lang/calcit/issues/2456#issuecomment-6513364453)，不为应用增加特例或放宽门禁。
 

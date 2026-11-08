@@ -22,7 +22,8 @@ for (const action of [t.mount, t.update]) {
   test(`${action} Canvas effect preserves dimensions, styles and drawing calls`, () => {
     const calls = [];
     const ctx = Object.fromEntries(['clearRect', 'moveTo', 'rect', 'stroke', 'fill'].map(name => [name, (...args) => { calls.push([name, ...args]); }]));
-    const el = { offsetWidth: 640, offsetHeight: 480, getContext: (kind) => { assert.equal(kind, '2d'); return ctx; } };
+    ctx.fillStyle = ctx.strokeStyle = '#000000';
+    const el = { offsetWidth: 640, offsetHeight: 480, width: 300, height: 150, getContext: (kind) => { assert.equal(kind, '2d'); return ctx; } };
     runEffect(action, el);
     assert.equal(el.width, 640);
     assert.equal(el.height, 480);
@@ -34,8 +35,9 @@ for (const action of [t.mount, t.update]) {
 test('unmount does not dereference the Canvas host', () => {
   runEffect(t.unmount, null);
 });
-test('Canvas trusted boundary rejects missing 2d context', () => {
-  assert.throws(() => runEffect(t.mount, { offsetWidth: 1, offsetHeight: 1, getContext: () => null }), TypeError);
+test('Canvas boundary rejects missing 2d context', () => {
+  const el = { offsetWidth: 1, offsetHeight: 1, width: 300, height: 150, getContext: () => null };
+  assert.throws(() => runEffect(t.mount, el), /CanvasContextHost/);
 });
 test('Meta+Enter prevents default while other keyboard events do not submit', () => {
   for (const [metaKey, key, expected] of [[true, 'Enter', true], [false, 'Enter', false], [true, 'x', false]]) {
