@@ -25,7 +25,7 @@ CLI 与 `@calcit/procs` 配对正式 0.38.0。升级后重新安装完整依赖�
 错误数据不会填默认值或丢弃额外字段。已经验证的 Store 继续由 `read-store` 保留原对象身份。
 启动时先恢复成功，再渲染并注册 watch、定时保存和退出保存；坏存档会保留原文供修复。
 
-默认 entry 将 `dispatch-op` 绑定到 `app.schema/Op`。编辑器派发具名事件，旧 Reel 控制在共用入口解码。回放操作不会进入应用记录。
+默认 entry 将 `dispatch-op` 绑定到 `app.schema/Op`。编辑器派发具名应用事件，Reel 快捷键和面板通过单独的 `reel.typed/Control` 回调处理。回放操作不会进入应用记录。
 Canvas 固定矩形绘制、尺寸、样式与 Meta+Enter 提交行为保持现状，DSL 绘图执行器仍为 TODO。
 
 ### 修改与验证
