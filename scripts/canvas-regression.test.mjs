@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as c from '../js-out/calcit.core.mjs';
 import { draw_effect, comp_codearea, submit_shortcut_$q_ } from '../js-out/app.comp.container.mjs';
-import { store, read_store, read_stored_store } from '../js-out/app.schema.mjs';
+import { store, read_stored_store } from '../js-out/app.schema.mjs';
 import { updater } from '../js-out/app.updater.mjs';
 import { component_$q_, component_tree } from '../js-out/respo.util.detect.mjs';
 import { event__GT_edn } from '../js-out/respo.util.format.mjs';
@@ -87,7 +87,7 @@ test('Meta+Enter dispatches one parsed ops Enum accepted by updater', () => {
   assert.ok(c._$e_(field(next, t.ops), c._$L_(c._$L_('rect', '中文', c._$L_('nested', '1')))));
 });
 test('old empty and CirruQuote saves restore without changing state or dropping ops', () => {
-  assert.equal(read_store(store), store);
+  assert.ok(c._$e_(read_stored_store(c.format_cirru_edn(store)), store));
   // Captured from the original 0.27.0 writer, not fabricated JS host objects.
   const saved = [
     ["%{} 'Store\n  :ops $ []\n  :states $ {} $ :cursor ([])\n", c._$L_()],

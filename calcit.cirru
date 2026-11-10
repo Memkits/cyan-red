@@ -33,12 +33,11 @@
         'comp-codearea $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defcomp comp-codearea (states)
             let
-                states-map states
                 cursor $ decode-map-as
-                  .unwrap $ get states-map :cursor
+                  .unwrap $ get states :cursor
                   List respo.schema/CoordKey
                 state $ decode-map-as
-                  .unwrap-or (get states-map :data)
+                  .unwrap-or (get states :data)
                     {} $ :content |
                   Map Tag Dynamic
                 content $ decode-map-as
@@ -62,7 +61,7 @@
                         (:err message) (raise message)
                     , &unit
           :examples $ []
-          :schema $ quote $ Fn (Map Tag Dynamic) (-> respo.schema/Component) (:features :js-ffi)
+          :schema $ quote $ Fn respo.schema/States (-> respo.schema/Component) (:features :js-ffi)
         'comp-container $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defcomp comp-container (reel on-control!)
             let
@@ -74,7 +73,7 @@
                 div
                   {} $ :style $ .merge ui/expand ui/column
                   div ({}) (<> |TODO)
-                  comp-codearea $ decode-map-as (>> states :code) (Map Tag Dynamic)
+                  comp-codearea $ >> states :code
                 comp-draw ops
                 if dev?
                   Option :some $ comp-typed-reel (>> states :reel) reel ({}) on-control!
@@ -293,23 +292,6 @@
           :examples $ []
           :schema $ quote $ Fn Dynamic
             -> $ List $ List app.schema/CirruNode
-        'read-store $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ defn read-store (value)
-            if (struct? value)
-              struct-match value
-                Store current $ let
-                    fields $ &struct:to-map current
-                    normalized $ Store :states
-                      decode-map-as
-                        .unwrap $ get fields :states
-                        Map Tag Dynamic
-                      , :ops $ read-ops
-                        .unwrap $ get fields :ops
-                  if (= current normalized) current normalized
-                _ other $ raise |Expected-Store
-              raise |Expected-Store
-          :examples $ []
-          :schema $ quote $ Fn Dynamic (-> app.schema/Store)
         'read-stored-store $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn read-stored-store (raw)
             let
@@ -348,11 +330,13 @@
           :code $ quote $ defn updater (store op op-id op-time)
             match op
               (:states cursor data)
-                app.schema/read-store $ update-states store cursor data
+                struct-with store $ :states $ decode-map-as
+                  update-state-tree (:states store) cursor data
+                  Map Tag Dynamic
               (:ops data) (assoc store :ops data)
               (:hydrate-storage data) data
           :examples $ []
           :schema $ quote $ Fn app.schema/Store app.schema/Op String Number (-> app.schema/Store)
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.updater
-          :require $ respo.cursor :refer $ update-states
+          :require $ respo.cursor :refer $ update-state-tree
