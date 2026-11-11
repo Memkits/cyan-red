@@ -57,7 +57,8 @@
                       -> Unit
                     when (submit-shortcut? e)
                       d! $ app.schema/Op :ops $ match (.parse-cirru-list content)
-                        (:ok parsed) (app.schema/read-ops parsed)
+                        (:ok parsed)
+                          decode-map-as parsed $ List $ List app.schema/CirruNode
                         (:err message) (raise message)
                     , &unit
           :examples $ []
@@ -76,8 +77,8 @@
                   comp-codearea $ >> states :code
                 comp-draw ops
                 if dev?
-                  Option :some $ comp-typed-reel (>> states :reel) reel ({}) on-control!
-                  Option :none
+                  Some $ comp-typed-reel (>> states :reel) reel ({}) on-control!
+                  , None
           :examples $ []
           :schema $ quote $ Fn (reel.typed/State app.schema/Op app.schema/Store)
             Fn reel.typed/Control $ -> Unit
@@ -165,13 +166,13 @@
         '*reel $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defref *reel (typed/new-reel schema/store)
           :examples $ []
-          :schema $ quote $ Ref (reel.typed/State app.schema/Op app.schema/Store)
+          :schema $ quote $ Ref (typed/State schema/Op schema/Store)
         'dispatch! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn dispatch! (op)
             when config/dev? $ println |Dispatch: op
             dispatch-resolved! op
           :examples $ []
-          :schema $ quote $ Fn app.schema/Op (-> Unit)
+          :schema $ quote $ Fn schema/Op (-> Unit)
         'dispatch-resolved! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn dispatch-resolved! (op)
             hint-fn $ Fn app.schema/ResolvedOp (-> Unit) (:features :js-ffi)
@@ -210,7 +211,7 @@
             when config/dev? $ println |Dispatch: control
             dispatch-resolved! control
           :examples $ []
-          :schema $ quote $ Fn reel.typed/Control (-> Unit)
+          :schema $ quote $ Fn typed/Control (-> Unit)
         'persist-storage! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn persist-storage! ()
             storage-set!
@@ -282,16 +283,22 @@
             :ops $ List $ List app.schema/CirruNode
           :examples $ []
           :schema $ quote StructDef
+        'StoredOps $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ defunion StoredOps CirruQuote
+            List $ List CirruNode
+          :examples $ []
+          :schema $ quote UnionDef
         'read-ops $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn read-ops (value)
-            decode-map-as
-              if (cirru-quote? value)
-                .unwrap $ .to-list $ decode-map-as value 'CirruQuote
-                , value
-              List $ List app.schema/CirruNode
+            match value
+              (CirruQuote tree)
+                decode-map-as
+                  .unwrap $ .to-list tree
+                  List $ List CirruNode
+              (List nodes) nodes
           :examples $ []
-          :schema $ quote $ Fn Dynamic
-            -> $ List $ List app.schema/CirruNode
+          :schema $ quote $ Fn StoredOps
+            -> $ List $ List CirruNode
         'read-stored-store $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn read-stored-store (raw)
             let
@@ -302,12 +309,14 @@
                   let
                       fields $ decode-map-as (&struct:to-map value) (Map Tag Dynamic)
                     decode-map-as
-                      .assoc fields :ops $ read-ops $ .unwrap (get fields :ops)
+                      .assoc fields :ops $ read-ops $ decode-map-as
+                        .unwrap $ get fields :ops
+                        , StoredOps
                       , 'app.schema/Store
                   raise |Expected-Store
                 raise |Expected-Store
           :examples $ []
-          :schema $ quote $ Fn String (-> app.schema/Store)
+          :schema $ quote $ Fn String (-> Store)
           :tests $ [] $ %{} 'TestEntry (:name |legacy-quote-tree-and-roundtrip)
             :code $ quote $ let
                 restored $ read-stored-store "|%{} 'Store\n  :ops $ quote $\n    rect 中文 :a |b (nested 1)\n  :states $ {} $ :cursor ([])\n"
@@ -321,7 +330,7 @@
               {} $ :cursor $ []
               , :ops $ []
           :examples $ []
-          :schema $ quote app.schema/Store
+          :schema $ quote Store
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.schema
     'app.updater $ %{} 'FileEntry
