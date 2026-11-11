@@ -34,10 +34,10 @@
           :code $ quote $ defcomp comp-codearea (states)
             let
                 cursor $ decode-map-as
-                  .unwrap $ get states :cursor
+                  .unwrap $ &map:get states :cursor
                   List respo.schema/CoordKey
                 state $ decode-map-as
-                  .unwrap-or (get states :data)
+                  .unwrap-or (&map:get states :data)
                     {} $ :content |
                   Map Tag Dynamic
                 content $ decode-map-as
@@ -175,7 +175,7 @@
           :schema $ quote $ Fn schema/Op (-> Unit)
         'dispatch-resolved! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn dispatch-resolved! (op)
-            hint-fn $ Fn app.schema/ResolvedOp (-> Unit) (:features :js-ffi)
+            hint-fn $ Fn schema/ResolvedOp (-> Unit) (:features :js-ffi)
             reset! *reel $ match op
               (reel.typed/Control control) (typed/apply-control updater @*reel control)
               (app.schema/Op action)
