@@ -81,9 +81,9 @@
                   , None
           :examples $ []
           :schema $ quote $ Fn (reel.typed/State app.schema/Op app.schema/Store)
-            Fn reel.typed/Control $ -> Unit
+            Fn reel.typed/Control (-> Unit) (:features :io :state)
             -> respo.schema/Component
-            :features :js-ffi
+            :features :io :js-ffi :state
         'comp-draw $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defcomp comp-draw (ops)
             [] (draw-effect ops)
@@ -243,7 +243,7 @@
             , &unit
           :examples $ []
           :schema $ quote $ Fn Number
-            Fn $ -> Unit
+            Fn (-> Unit) (:features :state)
             -> Unit
             :features :js-ffi
       :ns $ %{} 'NsEntry (:doc |)
