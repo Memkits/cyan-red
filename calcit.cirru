@@ -62,7 +62,7 @@
                         (:err message) (raise message)
                     , &unit
           :examples $ []
-          :schema $ quote $ Fn respo.schema/States (-> respo.schema/Component) (:features :js-ffi)
+          :schema $ quote $ Fn (Map Dynamic Dynamic) (-> respo.schema/Component) (:features :js-ffi)
         'comp-container $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defcomp comp-container (reel on-control!)
             let
