@@ -36,10 +36,11 @@
                 cursor $ decode-map-as
                   .unwrap $ &map:get states :cursor
                   List respo.schema/CoordKey
-                state $ decode-map-as
-                  .unwrap-or (&map:get states :data)
+                state $ match (&map:get states :data)
+                  (:some value)
+                    decode-map-as value $ Map Tag Dynamic
+                  (:none)
                     {} $ :content |
-                  Map Tag Dynamic
                 content $ decode-map-as
                   .unwrap $ get state :content
                   , 'String
@@ -62,7 +63,7 @@
                         (:err message) (raise message)
                     , &unit
           :examples $ []
-          :schema $ quote $ Fn (Map Dynamic Dynamic) (-> respo.schema/Component) (:features :js-ffi)
+          :schema $ quote $ Fn (Map Dynamic StateValue) (-> respo.schema/Component) (:generics StateValue) (:features :js-ffi)
         'comp-container $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defcomp comp-container (reel on-control!)
             let

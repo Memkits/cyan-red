@@ -74,6 +74,12 @@ test('code input dispatches one nested states Enum without corrupting Store', ()
   assert.equal(field(field(field(field(next, t.states), t.code), t.data), t.content), 'rect 1 2');
   assert.ok(c._$e_(field(next, t.ops), field(store, t.ops)));
 });
+test('code state defaults only when data is absent', () => {
+  const cursor = c._$L_(t.code);
+  assert.doesNotThrow(() => comp_codearea(map(t.cursor, cursor)));
+  assert.throws(() => comp_codearea(map(t.cursor, cursor, t.data, null)));
+  assert.throws(() => comp_codearea(map(t.cursor, cursor, t.data, false)));
+});
 test('Meta+Enter dispatches one parsed ops Enum accepted by updater', () => {
   const tree = comp_codearea(map(t.cursor, c._$L_(t.code), t.data, map(t.content, 'rect 中文 (nested 1)')));
   let next, count = 0;
