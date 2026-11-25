@@ -8,8 +8,8 @@ Demo http://r.tiye.me/Memkits/cyan-red/ .
 
 ### 使用者影响
 
-CLI 与 `@calcit/procs` 配对正式 0.44.0。升级后重新安装完整依赖图、生成 JS 并刷新。
-依赖为正式 Respo 0.19.13、Reel 0.11.5、UI 0.15.7、JS FFI 0.2.19 和传递依赖 Router 0.12.11。
+CLI 与 `@calcit/procs` 配对正式 0.45.1。升级后重新安装完整依赖图、生成 JS 并刷新。
+依赖为正式 Respo 0.19.18、Reel 0.11.9、UI 0.16.5、JS FFI 0.2.24 和传递依赖 Router 0.12.17。
 
 编辑器使用 RespoEvent，组件状态路径使用 CoordKey，应用操作和回放控制通过 `Op | reel.typed/Control` 区分。Canvas 固定绘制、Meta+Enter、存档恢复和 HUD 沿用。启动和重绘会检查 Canvas 元素与 2D context，缺失 context 时明确报错。DSL 绘图执行器仍待实现。
 
