@@ -129,14 +129,15 @@
           :schema $ quote $ Fn respo.schema/RespoEvent (-> String)
         'submit-shortcut? $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn submit-shortcut? (event)
-            if
-              and
-                = true $ :meta? event
-                = |Enter $ :key event
-              do
-                .prevent-default! $ :event event
-                , true
-              , false
+            let
+                meta $ :meta? event
+                key $ :key event
+              if
+                and (bool? meta) meta (string? key) (= |Enter key)
+                do
+                  .prevent-default! $ :event event
+                  , true
+                , false
           :examples $ []
           :schema $ quote $ Fn respo.schema/RespoEvent (-> Bool) (:features :js-ffi)
       :ns $ %{} 'NsEntry (:doc |)
